@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<project name="hse_db" database="LogicalDesign" id="37834eff-6d89-4498-9288-fabb7a66d5ca" >
+	<schema name="hse_schema" >
+		<table name="Entity" />
+		<table name="commentaire" prior="commenta" >
+			<column name="commentaire_id" type="VARCHAR" mandatory="y" />
+			<column name="nom" type="VARCHAR" length="9999999" />
+			<column name="prenom" type="VARCHAR" length="9999999" />
+			<column name="commentaire" type="TEXT" />
+			<column name="toko5_id" type="VARCHAR" mandatory="y" />
+			<index name="pk_commentaire" unique="PRIMARY_KEY" >
+				<column name="commentaire_id" />
+				<column name="toko5_id" />
+			</index>
+			<fk name="fk_commentaire_toko5" to_schema="hse_schema" to_table="toko5" type="Identifying" mandatory="y" cardinality="ZeroMore" range_from="0" range_to="0" >
+				<fk_column name="toko5_id" pk="toko5_id" />
+			</fk>
+		</table>
+		<table name="epi" prior="ep" >
+			<column name="epi_id" type="INT" mandatory="y" />
+			<column name="nom" type="VARCHAR" length="9999999" />
+			<column name="pictogramme" type="VARCHAR" length="9999999" />
+			<index name="pk_epi" unique="PRIMARY_KEY" >
+				<column name="epi_id" />
+			</index>
+		</table>
+		<table name="hazard_risk" prior="hazardrisk" >
+			<column name="risk_id" type="VARCHAR" mandatory="y" />
+			<column name="nom" type="VARCHAR" length="9999999" mandatory="y" />
+			<column name="risk_pictogramme" type="VARCHAR" mandatory="y" />
+			<index name="pk_ris" unique="PRIMARY_KEY" >
+				<column name="risk_id" />
+			</index>
+		</table>
+		<table name="hse" prior="hs" >
+			<column name="hse_id" prior="id" type="VARCHAR" mandatory="y" />
+			<column name="email" type="VARCHAR" />
+			<column name="nom" type="VARCHAR" />
+			<column name="prenom" type="VARCHAR" />
+			<index name="pk_hse" unique="PRIMARY_KEY" >
+				<column name="hse_id" />
+			</index>
+		</table>
+		<table name="organise" prior="organise0" >
+			<column name="organise_id" type="VARCHAR" mandatory="y" />
+			<column name="nom" type="VARCHAR" length="9999999" mandatory="y" />
+			<column name="pictogramme" type="VARCHAR" mandatory="y" />
+			<index name="pk_organise" unique="PRIMARY_KEY" >
+				<column name="organise_id" />
+			</index>
+		</table>
+		<table name="risk" prior="risk-" />
+		<table name="think" prior="thin" >
+			<column name="think_id" type="INT" />
+			<column name="nom" type="VARCHAR" mandatory="y" />
+			<column name="pictogramme" type="VARCHAR" mandatory="y" />
+			<index name="pk_think_id" unique="UNIQUE_KEY" >
+				<column name="think_id" />
+			</index>
+		</table>
+		<table name="tok" prior="toko" />
+		<table name="toko5" prior="toko" >
+			<column name="toko5_id" prior="id" type="VARCHAR" mandatory="y" />
+			<column name="nom_contractant" prior="nom" type="VARCHAR" length="9999999" mandatory="y" />
+			<column name="prenom_contractant" prior="prenom" type="VARCHAR" length="9999999" mandatory="y" />
+			<column name="date_heure" prior="date" type="DATETIME" mandatory="y" />
+			<column name="bonne_condition" type="BOOLEAN" mandatory="y" />
+			<column name="securite" type="BOOLEAN" mandatory="y" />
+			<column name="etat" type="BOOLEAN" >
+				<defo><![CDATA[false]]></defo>
+			</column>
+			<index name="pk_toko5" unique="PRIMARY_KEY" >
+				<column name="toko5_id" />
+			</index>
+		</table>
+		<table name="toko5_epi" prior="toko5_" >
+			<column name="toko5_epi_id" type="VARCHAR" mandatory="y" />
+			<column name="epi_id" type="VARCHAR" mandatory="y" />
+			<column name="toko5_id" type="INT" mandatory="y" />
+			<index name="pk_toko5_epi" unique="PRIMARY_KEY" >
+				<column name="toko5_epi_id" />
+				<column name="epi_id" />
+				<column name="toko5_id" />
+			</index>
+			<fk name="fk_toko5_epi_epi" to_schema="hse_schema" to_table="epi" type="Identifying" mandatory="y" cardinality="ZeroMore" range_from="0" range_to="0" >
+				<fk_column name="epi_id" pk="epi_id" />
+			</fk>
+			<fk name="fk_toko5_epi_toko5" to_schema="hse_schema" to_table="toko5" type="Identifying" mandatory="y" cardinality="ZeroMore" range_from="0" range_to="0" >
+				<fk_column name="toko5_id" pk="toko5_id" />
+			</fk>
+		</table>
+		<table name="toko5_hazard_risk" prior="control_measure" >
+			<column name="toko5_hazard_risk_id" prior="control_measure_id" type="VARCHAR" mandatory="y" />
+			<column name="control_measure" prior="mesure" type="TEXT" mandatory="y" />
+			<column name="toko5_id" type="VARCHAR" mandatory="y" />
+			<column name="risk_id" type="VARCHAR" mandatory="y" />
+			<index name="pk_control_measure" unique="PRIMARY_KEY" >
+				<column name="toko5_hazard_risk_id" />
+				<column name="toko5_id" />
+				<column name="risk_id" />
+			</index>
+			<fk name="fk_control_measure_toko5" to_schema="hse_schema" to_table="toko5" type="Identifying" mandatory="y" cardinality="ZeroMore" range_from="0" range_to="0" >
+				<fk_column name="toko5_id" pk="toko5_id" />
+			</fk>
+			<fk name="fk_control_measure_hazard_risk_0" to_schema="hse_schema" to_table="hazard_risk" type="Identifying" mandatory="y" cardinality="ZeroMore" range_from="0" range_to="0" >
+				<fk_column name="risk_id" pk="risk_id" />
+			</fk>
+		</table>
+		<table name="toko5_organise" prior="toko5_organi" />
+		<table name="toko5_penser" prior="toko5_pens" >
+			<column name="toko5_penser_id" prior="id" type="INT" mandatory="y" />
+			<column name="fitness" type="BOOLEAN" mandatory="y" />
+			<column name="formation" type="BOOLEAN" mandatory="y" />
+			<column name="competence_spec" type="BOOLEAN" mandatory="y" />
+			<column name="materiels" type="BOOLEAN" mandatory="y" />
+			<column name="nombre_intervenant" type="INT" mandatory="y" />
+			<index name="pk_toko5_penser" unique="PRIMARY_KEY" >
+				<column name="toko5_penser_id" />
+			</index>
+		</table>
+		<table name="toko5_think" prior="toko5_thi" >
+			<column name="id_toko5_think" type="VARCHAR" mandatory="y" />
+			<column name="id_toko5" type="VARCHAR" mandatory="y" />
+			<column name="id_think" prior="id_organise" type="VARCHAR" mandatory="y" />
+			<column name="etat" type="BOOLEAN" mandatory="y" />
+			<index name="pk_toko5_think" unique="PRIMARY_KEY" >
+				<column name="id_toko5_think" />
+				<column name="id_toko5" />
+				<column name="id_think" />
+			</index>
+			<fk name="fk_toko5_think_toko5" to_schema="hse_schema" to_table="toko5" type="Identifying" mandatory="y" cardinality="ZeroMore" range_from="0" range_to="0" >
+				<fk_column name="id_toko5" pk="toko5_id" />
+			</fk>
+			<fk name="fk_toko5_think_think" to_schema="hse_schema" to_table="think" type="Identifying" mandatory="y" cardinality="ZeroMore" range_from="0" range_to="0" >
+				<fk_column name="id_think" pk="think_id" />
+			</fk>
+		</table>
+	</schema>
+	<layout name="Default Diagram" id="d9e753c9-1984-4a92-a72b-e17908a4e4ec" show_relation="columns" >
+		<entity schema="hse_schema" name="hse" color="C1D8EE" x="133" y="57" />
+		<entity schema="hse_schema" name="hazard_risk" color="C1D8EE" x="342" y="57" />
+		<entity schema="hse_schema" name="toko5" color="C1D8EE" x="57" y="209" />
+		<entity schema="hse_schema" name="organise" color="C1D8EE" x="456" y="342" />
+		<entity schema="hse_schema" name="toko5_think" color="C1D8EE" x="247" y="513" />
+		<entity schema="hse_schema" name="toko5_epi" color="C1D8EE" x="760" y="304" />
+		<entity schema="hse_schema" name="epi" color="C1D8EE" x="988" y="399" />
+		<entity schema="hse_schema" name="think" color="C1D8EE" x="608" y="494" />
+		<entity schema="hse_schema" name="toko5_hazard_risk" color="C1D8EE" x="703" y="57" />
+		<entity schema="hse_schema" name="commentaire" color="C1D8EE" x="950" y="171" />
+	</layout>
+</project>
