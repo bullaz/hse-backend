@@ -202,10 +202,10 @@
 	</schema>
 	<layout name="Default Diagram" id="d9e753c9-1984-4a92-a72b-e17908a4e4ec" show_relation="columns" >
 		<entity schema="hse_schema" name="reponse" color="C1D8EE" x="361" y="456" />
-		<entity schema="hse_schema" name="commentaire" color="C1D8EE" x="836" y="323" />
+		<entity schema="hse_schema" name="hse" color="C1D8EE" x="57" y="76" />
+		<entity schema="hse_schema" name="toko5" color="C1D8EE" x="57" y="304" />
+		<entity schema="hse_schema" name="question" color="C1D8EE" x="589" y="342" />
 		<entity schema="hse_schema" name="mesure_controle" color="C1D8EE" x="513" y="57" />
-		<entity schema="hse_schema" name="hse" color="C1D8EE" x="76" y="171" />
-		<entity schema="hse_schema" name="question" color="C1D8EE" x="551" y="361" />
-		<entity schema="hse_schema" name="toko5" color="C1D8EE" x="57" y="380" />
+		<entity schema="hse_schema" name="commentaire" color="C1D8EE" x="836" y="323" />
 	</layout>
 </project>

@@ -85,7 +85,9 @@
 			<column name="nom" type="VARCHAR" length="9999999" />
 			<column name="description" type="VARCHAR" />
 			<column name="pictogramme" type="VARCHAR" />
-			<column name="categorie" type="VARCHAR" mandatory="y" />
+			<column name="categorie" type="VARCHAR" mandatory="y" >
+				<comment><![CDATA[check (categorie in ("cat1","cat2","cat3"))]]></comment>
+			</column>
 			<column name="required" type="BOOLEAN" mandatory="y" >
 				<defo><![CDATA[false]]></defo>
 			</column>
@@ -128,7 +130,9 @@
 			<column name="nom_contractant" prior="nom" type="VARCHAR" length="9999999" mandatory="y" />
 			<column name="prenom_contractant" prior="prenom" type="VARCHAR" length="9999999" mandatory="y" />
 			<column name="date_heure" prior="date" type="DATETIME" mandatory="y" />
-			<column name="etat" type="VARCHAR" mandatory="y" />
+			<column name="etat" type="VARCHAR" mandatory="y" >
+				<comment><![CDATA[check (etat in ("valide","invalide","ongoing"))]]></comment>
+			</column>
 			<index name="pk_toko5" unique="PRIMARY_KEY" >
 				<column name="toko5_id" />
 			</index>
@@ -197,11 +201,11 @@
 		</table>
 	</schema>
 	<layout name="Default Diagram" id="d9e753c9-1984-4a92-a72b-e17908a4e4ec" show_relation="columns" >
-		<entity schema="hse_schema" name="toko5" color="C1D8EE" x="76" y="418" />
-		<entity schema="hse_schema" name="question" color="C1D8EE" x="570" y="361" />
-		<entity schema="hse_schema" name="commentaire" color="C1D8EE" x="855" y="323" />
-		<entity schema="hse_schema" name="reponse" color="C1D8EE" x="380" y="456" />
-		<entity schema="hse_schema" name="mesure_controle" color="C1D8EE" x="532" y="57" />
-		<entity schema="hse_schema" name="hse" color="C1D8EE" x="57" y="171" />
+		<entity schema="hse_schema" name="reponse" color="C1D8EE" x="361" y="456" />
+		<entity schema="hse_schema" name="hse" color="C1D8EE" x="57" y="76" />
+		<entity schema="hse_schema" name="toko5" color="C1D8EE" x="57" y="304" />
+		<entity schema="hse_schema" name="question" color="C1D8EE" x="589" y="342" />
+		<entity schema="hse_schema" name="mesure_controle" color="C1D8EE" x="513" y="57" />
+		<entity schema="hse_schema" name="commentaire" color="C1D8EE" x="836" y="323" />
 	</layout>
 </project>
