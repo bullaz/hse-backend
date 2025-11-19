@@ -2,14 +2,12 @@
 <project name="hse_db" database="LogicalDesign" id="37834eff-6d89-4498-9288-fabb7a66d5ca" >
 	<schema name="hse_schema" >
 		<table name="Entity" />
-		<table name="Entity_0" />
-		<table name="Entity_1" />
 		<table name="commentaire" prior="commenta" >
 			<column name="commentaire_id" type="VARCHAR" mandatory="y" />
-			<column name="toko5_id" type="VARCHAR" mandatory="y" />
 			<column name="nom" type="VARCHAR" length="9999999" />
 			<column name="prenom" type="VARCHAR" length="9999999" />
 			<column name="commentaire" type="TEXT" />
+			<column name="toko5_id" type="VARCHAR" mandatory="y" />
 			<index name="pk_commentaire" unique="PRIMARY_KEY" >
 				<column name="commentaire_id" />
 				<column name="toko5_id" />
@@ -36,82 +34,20 @@
 		</table>
 		<table name="hse" prior="hs" >
 			<column name="hse_id" prior="id" type="VARCHAR" mandatory="y" />
+			<column name="email" type="VARCHAR" />
 			<column name="nom" type="VARCHAR" />
 			<column name="prenom" type="VARCHAR" />
-			<column name="email" type="VARCHAR" />
 			<index name="pk_hse" unique="PRIMARY_KEY" >
 				<column name="hse_id" />
 			</index>
 		</table>
-		<table name="mesure_controle" prior="controlMeasure" >
-			<column name="mesure_controle_id" prior="controlMeasure_id" type="VARCHAR" mandatory="y" />
-			<column name="toko5_id" type="VARCHAR" mandatory="y" />
-			<column name="question_id" type="VARCHAR" mandatory="y" />
-			<column name="mesure_prise" type="TEXT" />
-			<column name="implemented" type="BOOLEAN" >
-				<defo><![CDATA[false]]></defo>
-			</column>
-			<index name="pk_controlMeasure" unique="PRIMARY_KEY" >
-				<column name="mesure_controle_id" />
-				<column name="toko5_id" />
-				<column name="question_id" />
-			</index>
-			<fk name="fk_mesure_controle_toko5" to_schema="hse_schema" to_table="toko5" type="Identifying" mandatory="y" cardinality="ZeroMore" range_from="0" range_to="0" >
-				<fk_column name="toko5_id" pk="toko5_id" />
-			</fk>
-			<fk name="fk_mesure_controle_question" to_schema="hse_schema" to_table="question" type="Identifying" mandatory="y" cardinality="ZeroMore" range_from="0" range_to="0" >
-				<fk_column name="question_id" pk="question_id" />
-			</fk>
-		</table>
 		<table name="organise" prior="organise0" >
 			<column name="organise_id" type="VARCHAR" mandatory="y" />
 			<column name="nom" type="VARCHAR" length="9999999" mandatory="y" />
-			<column name="pictogramme_id" prior="pictogramme_id_pl" type="VARCHAR" mandatory="y" />
+			<column name="pictogramme" type="VARCHAR" mandatory="y" />
 			<index name="pk_organise" unique="PRIMARY_KEY" >
 				<column name="organise_id" />
-				<column name="pictogramme_id" />
 			</index>
-		</table>
-		<table name="pictogramme" prior="pictogra" >
-			<column name="pictogramme_id" type="VARCHAR" mandatory="y" />
-			<column name="nom" type="VARCHAR" />
-			<column name="image" type="VARCHAR" />
-			<index name="pk_pictogramme" unique="PRIMARY_KEY" >
-				<column name="pictogramme_id" />
-			</index>
-		</table>
-		<table name="question" prior="que" >
-			<column name="question_id" type="VARCHAR" mandatory="y" />
-			<column name="nom" type="VARCHAR" length="9999999" />
-			<column name="description" type="VARCHAR" />
-			<column name="pictogramme" type="VARCHAR" />
-			<column name="categorie" type="VARCHAR" mandatory="y" />
-			<column name="required" type="BOOLEAN" mandatory="y" >
-				<defo><![CDATA[false]]></defo>
-			</column>
-			<column name="is_risk_question" type="BOOLEAN" >
-				<defo><![CDATA[false]]></defo>
-			</column>
-			<index name="pk_question" unique="PRIMARY_KEY" >
-				<column name="question_id" />
-			</index>
-		</table>
-		<table name="reponse" prior="repons" >
-			<column name="reponse_id" type="VARCHAR" mandatory="y" />
-			<column name="toko5_id" type="VARCHAR" mandatory="y" />
-			<column name="question_id" type="VARCHAR" mandatory="y" />
-			<column name="valeur" type="BOOLEAN" mandatory="y" />
-			<index name="pk_reponse" unique="PRIMARY_KEY" >
-				<column name="reponse_id" />
-				<column name="toko5_id" />
-				<column name="question_id" />
-			</index>
-			<fk name="fk_reponse_toko5" to_schema="hse_schema" to_table="toko5" type="Identifying" mandatory="y" cardinality="ZeroMore" range_from="0" range_to="0" >
-				<fk_column name="toko5_id" pk="toko5_id" />
-			</fk>
-			<fk name="fk_reponse_question" to_schema="hse_schema" to_table="question" type="Identifying" mandatory="y" cardinality="ZeroMore" range_from="0" range_to="0" >
-				<fk_column name="question_id" pk="question_id" />
-			</fk>
 		</table>
 		<table name="risk" prior="risk-" />
 		<table name="think" prior="thin" >
@@ -128,7 +64,11 @@
 			<column name="nom_contractant" prior="nom" type="VARCHAR" length="9999999" mandatory="y" />
 			<column name="prenom_contractant" prior="prenom" type="VARCHAR" length="9999999" mandatory="y" />
 			<column name="date_heure" prior="date" type="DATETIME" mandatory="y" />
-			<column name="etat" type="VARCHAR" mandatory="y" />
+			<column name="bonne_condition" type="BOOLEAN" mandatory="y" />
+			<column name="securite" type="BOOLEAN" mandatory="y" />
+			<column name="etat" type="BOOLEAN" >
+				<defo><![CDATA[false]]></defo>
+			</column>
 			<index name="pk_toko5" unique="PRIMARY_KEY" >
 				<column name="toko5_id" />
 			</index>
@@ -197,11 +137,15 @@
 		</table>
 	</schema>
 	<layout name="Default Diagram" id="d9e753c9-1984-4a92-a72b-e17908a4e4ec" show_relation="columns" >
-		<entity schema="hse_schema" name="toko5" color="C1D8EE" x="76" y="418" />
-		<entity schema="hse_schema" name="question" color="C1D8EE" x="570" y="361" />
-		<entity schema="hse_schema" name="commentaire" color="C1D8EE" x="855" y="323" />
-		<entity schema="hse_schema" name="reponse" color="C1D8EE" x="380" y="456" />
-		<entity schema="hse_schema" name="mesure_controle" color="C1D8EE" x="532" y="57" />
-		<entity schema="hse_schema" name="hse" color="C1D8EE" x="57" y="171" />
+		<entity schema="hse_schema" name="hse" color="C1D8EE" x="133" y="57" />
+		<entity schema="hse_schema" name="hazard_risk" color="C1D8EE" x="342" y="57" />
+		<entity schema="hse_schema" name="toko5" color="C1D8EE" x="57" y="209" />
+		<entity schema="hse_schema" name="organise" color="C1D8EE" x="456" y="342" />
+		<entity schema="hse_schema" name="toko5_think" color="C1D8EE" x="247" y="513" />
+		<entity schema="hse_schema" name="toko5_epi" color="C1D8EE" x="760" y="304" />
+		<entity schema="hse_schema" name="epi" color="C1D8EE" x="988" y="399" />
+		<entity schema="hse_schema" name="think" color="C1D8EE" x="608" y="494" />
+		<entity schema="hse_schema" name="toko5_hazard_risk" color="C1D8EE" x="703" y="57" />
+		<entity schema="hse_schema" name="commentaire" color="C1D8EE" x="950" y="171" />
 	</layout>
 </project>
