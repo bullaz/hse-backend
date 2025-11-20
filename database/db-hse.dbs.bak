@@ -199,13 +199,23 @@
 				<fk_column name="id_think" pk="think_id" />
 			</fk>
 		</table>
+		<table name="traduction" prior="traductio" >
+			<column name="traduction_id" type="INT" mandatory="y" />
+			<column name="question_id" type="INT" />
+			<column name="nom" type="VARCHAR" />
+			<column name="description" type="VARCHAR" length="9999999" />
+			<index name="pk_traduction" unique="PRIMARY_KEY" >
+				<column name="traduction_id" />
+			</index>
+		</table>
 	</schema>
 	<layout name="Default Diagram" id="d9e753c9-1984-4a92-a72b-e17908a4e4ec" show_relation="columns" >
 		<entity schema="hse_schema" name="reponse" color="C1D8EE" x="361" y="456" />
 		<entity schema="hse_schema" name="hse" color="C1D8EE" x="57" y="76" />
-		<entity schema="hse_schema" name="toko5" color="C1D8EE" x="57" y="304" />
-		<entity schema="hse_schema" name="question" color="C1D8EE" x="589" y="342" />
 		<entity schema="hse_schema" name="mesure_controle" color="C1D8EE" x="513" y="57" />
 		<entity schema="hse_schema" name="commentaire" color="C1D8EE" x="836" y="323" />
+		<entity schema="hse_schema" name="toko5" color="C1D8EE" x="57" y="304" />
+		<entity schema="hse_schema" name="question" color="C1D8EE" x="589" y="342" />
+		<entity schema="hse_schema" name="traduction" color="C1D8EE" x="570" y="608" />
 	</layout>
 </project>
