@@ -23,10 +23,15 @@ public class Hse {
 	@Column(
 			name = "hse_id"
 	)
-	String hseId = "";
+	private String hseId = "";
 	
-	String email;
-	String nom;
-	String prenom;
+	@Column(nullable = false)
+	private String email;
+	
+	@Column(nullable = false)
+	private String nom;
+	
+	@Column(nullable = false)
+	private String prenom;
 	
 }
