@@ -36,7 +36,7 @@ public class Traduction {
     )
 	@JoinColumn(
             name = "question_id",
-            referencedColumnName = "id"
+            referencedColumnName = "question_id"
     )
 	private Question question;
 	

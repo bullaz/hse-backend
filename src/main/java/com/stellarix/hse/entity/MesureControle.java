@@ -37,7 +37,7 @@ public class MesureControle {
     )
 	@JoinColumn(
             name = "toko5_id",
-            referencedColumnName = "id"
+            referencedColumnName = "toko5_id"
     )
 	private Toko5 toko5;
 	
@@ -47,7 +47,7 @@ public class MesureControle {
     )
 	@JoinColumn(
             name = "question_id",
-            referencedColumnName = "id"
+            referencedColumnName = "question_id"
     )
 	private Question question;
 	

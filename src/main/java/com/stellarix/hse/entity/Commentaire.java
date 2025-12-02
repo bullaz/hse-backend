@@ -36,7 +36,7 @@ public class Commentaire {
     )
 	@JoinColumn(
             name = "toko5_id",
-            referencedColumnName = "id"
+            referencedColumnName = "toko5_id"
     )
 	private Toko5 toko5;
 	
