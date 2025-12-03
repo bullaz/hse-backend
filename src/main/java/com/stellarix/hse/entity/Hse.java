@@ -2,6 +2,8 @@ package com.stellarix.hse.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -23,6 +25,7 @@ public class Hse {
 	@Column(
 			name = "hse_id"
 	)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private String hseId = "";
 	
 	@Column(nullable = false)
@@ -30,6 +33,9 @@ public class Hse {
 	
 	@Column(nullable = false)
 	private String nom;
+	
+	@Column(nullable = false)
+	private String username;
 	
 	@Column(nullable = false)
 	private String prenom;
