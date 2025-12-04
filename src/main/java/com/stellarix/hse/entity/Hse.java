@@ -26,7 +26,7 @@ public class Hse {
 			name = "hse_id"
 	)
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private String hseId = "";
+	private Integer hseId = 0;
 	
 	@Column(nullable = false)
 	private String email;
@@ -39,5 +39,8 @@ public class Hse {
 	
 	@Column(nullable = false)
 	private String prenom;
+	
+	@Column(nullable = false)
+	private String password;
 	
 }
