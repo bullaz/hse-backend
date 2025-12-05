@@ -4,31 +4,27 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import com.stellarix.hse.entity.Hse;
+import com.stellarix.hse.service.AccountService;
+
 @Configuration
 @Slf4j
 public class Config {
 
     @Bean
-    CommandLineRunner commandLineRunner(/*ProduitManager produitManager, ClientManager clientManager, ClientRepo clientRepo, PanierRepo panierRepo*/){
-        return args -> {
-
-            // au moment de l'inscription : creer un panier vide pour le client
-
-            /*Client client = new Client();
-            client.setNom("Gondori");
-            client.setPrenom("Legolas");
-            client.setPseudo("legolas");
-            client.setMotDePasse("legolas123");
-            clientManager.save(client);*/
-
-            /*Client c = clientRepo.getById("client_1");
-
-            Panier panier = new Panier(c);
-            panierRepo.save(panier);
-            */
-        	
-        	/*insert HSE accounts here for now*/
-        	
+    CommandLineRunner commandLineRunner(AccountService accountService){
+        return args -> {        	
+        	try {
+        		
+        		/*insert HSE accounts here for now*/
+        		/**/
+//        		Hse user = new Hse(0,"andersonmahosi@gmail.com","Mahosy","Anderson","bulla","bulla");
+//            	accountService.addUser(user);
+//            	
+//            	log.info("after adding hse account");
+        	}catch(Exception e) {
+        		log.error("Failed to add HSE account during startup", e);
+        	}
         };
     }
 }

@@ -2,6 +2,7 @@ package com.stellarix.hse.security;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -24,8 +25,12 @@ import java.util.Arrays;
 
 @Configuration @EnableWebSecurity @RequiredArgsConstructor
 public class SecurityConfig /*extends WebSecurityConfigurerAdapter */{
+	
+	@Lazy
 	private final JwtAuthFilter jwtAuthFilter;
+	
     private final UserDetailsService userDetailsService;
+    private final PasswordEncoder passwordEncoder;
     
     
     @Bean
@@ -34,7 +39,7 @@ public class SecurityConfig /*extends WebSecurityConfigurerAdapter */{
             .csrf(csrf -> csrf.disable())
 
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/hse/test" , "/hse/signin", "/hse/signup", "/hse/refresh_token").permitAll()
+                .requestMatchers("/hse/test" , "/hse/signin", "/hse/signup", "/hse/refresh_token", "/hse/test").permitAll()
                 
                 .requestMatchers("/hse/**").hasAuthority("HSE")
                 
@@ -50,12 +55,6 @@ public class SecurityConfig /*extends WebSecurityConfigurerAdapter */{
         return http.build();
     }
 
-    
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
     
     @Bean
     protected CorsConfigurationSource corsConfigurationSource() {
@@ -74,7 +73,7 @@ public class SecurityConfig /*extends WebSecurityConfigurerAdapter */{
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
-        provider.setPasswordEncoder(passwordEncoder());
+        provider.setPasswordEncoder(passwordEncoder);
         return provider;
     }
     

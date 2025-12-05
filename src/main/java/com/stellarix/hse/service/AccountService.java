@@ -16,7 +16,9 @@ import com.stellarix.hse.entity.Hse;
 import com.stellarix.hse.repository.HseRepository;
 
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 public class AccountService implements UserDetailsService{
 	
@@ -33,13 +35,17 @@ public class AccountService implements UserDetailsService{
 	public UserDetails loadUserByUsername(String usernameOrEmail) throws UsernameNotFoundException {
 		List<String> roles = new ArrayList<>();
 		roles.add("hse");
-		Optional<Hse> account = hseRepository.findByUsernameOrEmail(usernameOrEmail);
+		Optional<Hse> account = hseRepository.findByUsernameOrEmail(usernameOrEmail, usernameOrEmail);
 		
 		if (account.isEmpty()) {
+			//log.info("no user with that username");
             throw new UsernameNotFoundException("User not found with username or email: " + usernameOrEmail);
         }
         
         Hse user = account.get();
+        
+        //log.info("hereeeee");
+        
         return new UserInfoDetails(user);
 	}
 	

@@ -22,7 +22,16 @@ public class JwtService {
 	@Value("${jwt.secret}")
     private String SECRET;
 
-    public String generateToken(String email) { // Use email as username
+    public Map<String,String> generateToken(String email) { // Use email as username
+        Map<String, Object> claims = new HashMap<>();
+        Map<String, String> tokens = new HashMap<>();
+      //return createToken(claims, email);
+        tokens.put("access_token", createToken(claims, email));
+        tokens.put("refresh_token", createRefreshToken(claims, email));
+        return tokens;
+    }
+    
+    public String generateAccessToken(String email) { // Use email as username
         Map<String, Object> claims = new HashMap<>();
         return createToken(claims, email);
     }
@@ -33,6 +42,16 @@ public class JwtService {
                 .setSubject(email)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + 1 * 60 * 1000))
+                .signWith(getSignKey(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+    
+    private String createRefreshToken(Map<String, Object> claims, String email) {
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(email)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000))
                 .signWith(getSignKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
@@ -67,8 +86,10 @@ public class JwtService {
         return extractExpiration(token).before(new Date());
     }
 
-    public Boolean validateToken(String token, UserDetails userDetails) {
-        final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+    public Boolean validateToken(String token/*, UserDetails userDetails*/) {
+        //final String username = extractUsername(token);
+        
+        //return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+        return !isTokenExpired(token);
     }
 }

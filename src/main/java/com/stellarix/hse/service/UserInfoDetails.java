@@ -27,6 +27,8 @@ public class UserInfoDetails implements UserDetails {
         this.username = userInfo.getEmail();
         this.password = userInfo.getPassword();
         List<String> roles = new ArrayList<String>();
+        
+        //
         roles.add("hse");
         this.authorities = roles
                 .stream()

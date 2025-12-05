@@ -10,16 +10,14 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @SpringBootApplication
 //@EnableJpaRepositories("com.stellarix.hse.repository")
 public class HseApplication {
-
+	
 	@Bean
-	PasswordEncoder passwordEncoder(){
-		return new BCryptPasswordEncoder();
-	}
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 	
 	public static void main(String[] args) {
 		SpringApplication.run(HseApplication.class, args);
 	}
-	
-	
 
 }
