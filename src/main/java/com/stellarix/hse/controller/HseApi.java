@@ -122,6 +122,11 @@ public class HseApi {
 		return "You're able to access protected HSE url that require authentication and authorization!";
 	}
 	
+//	@GetMapping("/protected_url")
+//	public String testProtected() {
+//		return "You're able to access protected HSE url that require authentication and authorization!";
+//	}
+	
 	
 	@PostMapping("/refresh_token")
     public ResponseEntity<?> refreshToken(

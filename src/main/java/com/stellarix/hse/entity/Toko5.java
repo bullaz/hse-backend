@@ -1,15 +1,18 @@
 package com.stellarix.hse.entity;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import org.hibernate.annotations.Check;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -31,10 +34,10 @@ public class Toko5 {
     private UUID toko5Id;
 	
 	@Column(name = "nom_contractant", nullable = false)
-	private String nom_contractant;
+	private String nomContractant;
 	
 	@Column(name = "prenom_contractant", nullable = false)
-	private String prenom_contractant;
+	private String prenomContractant;
 	
 	@Column(name = "date_heure", nullable = false)
 	private LocalDateTime dateHeure;
@@ -43,6 +46,17 @@ public class Toko5 {
 	@Check(constraints = "etat in ('valide','invalide','ongoing')")
 	private String etat = "ongoing";
 	
-	// add those one to many relationships (fetch eager) .... change to fetch lazy in those other classes if you don't systematically need the toko5
+	@OneToMany(
+			mappedBy = "toko5_id", 
+			fetch = FetchType.EAGER
+	)
+    private List<Commentaire> listCommentaire;
+	
+	@OneToMany(
+			mappedBy = "toko5_id", 
+			fetch = FetchType.EAGER
+	)
+    private List<Commentaire> listMesureControle;
+	
     
 }

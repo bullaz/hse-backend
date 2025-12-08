@@ -32,7 +32,7 @@ public class Commentaire {
 	
 	@ManyToOne(
             cascade = CascadeType.PERSIST,
-            fetch = FetchType.EAGER
+            fetch = FetchType.LAZY
     )
 	@JoinColumn(
             name = "toko5_id",

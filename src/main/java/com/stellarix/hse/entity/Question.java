@@ -39,7 +39,7 @@ public class Question {
 	@Column(nullable = false)
 	private Boolean required = false;
 	
-	@Column(nullable = false)
-	private Boolean is_risk_question = false;
+//	@Column(nullable = false)
+//	private Boolean is_risk_question = false;
 
 }
