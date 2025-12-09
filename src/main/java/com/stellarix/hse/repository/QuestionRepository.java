@@ -13,10 +13,13 @@ import com.stellarix.hse.entity.Hse;
 import com.stellarix.hse.entity.Question;
 
 @Repository
-public interface HseRepository extends JpaRepository<Hse, Integer>{
+public interface QuestionRepository extends JpaRepository<Question, Integer>{
 	
-	Optional<Hse> findByUsernameOrEmail(String nameOrEmail, String nameOrEmail2);
-	
-//	@Query("select * from question JOIN reponse On reponse.question_id = question.question_id WHERE reponse.valeur = false and reponse.toko5_id = :toko5Id and question.required = true")
-//	List<Question> findToko5Probleme(@Param("toko5Id") UUID toko5Id);
+	@Query(value = "SELECT q.* FROM question q " +
+            "JOIN reponse r ON r.question_id = q.question_id " +
+            "WHERE r.valeur = false " +
+            "AND r.toko5_id = :toko5Id " +
+            "AND q.required = true", 
+    nativeQuery = true)
+	List<Question> findToko5Probleme(@Param("toko5Id") UUID toko5Id);
 }

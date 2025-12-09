@@ -47,16 +47,16 @@ public class Toko5 {
 	private String etat = "ongoing";
 	
 	@OneToMany(
-			mappedBy = "toko5_id", 
+			mappedBy = "toko5", 
 			fetch = FetchType.EAGER
 	)
     private List<Commentaire> listCommentaire;
 	
 	@OneToMany(
-			mappedBy = "toko5_id", 
+			mappedBy = "toko5", 
 			fetch = FetchType.EAGER
 	)
-    private List<Commentaire> listMesureControle;
+    private List<MesureControle> listMesureControle;
 	
     
 }

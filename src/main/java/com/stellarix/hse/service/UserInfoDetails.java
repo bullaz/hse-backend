@@ -29,7 +29,7 @@ public class UserInfoDetails implements UserDetails {
         List<String> roles = new ArrayList<String>();
         
         //
-        roles.add("hse");
+        roles.add("HSE");
         this.authorities = roles
                 .stream()
                 .map(SimpleGrantedAuthority::new)

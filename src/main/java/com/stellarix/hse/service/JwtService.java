@@ -5,6 +5,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -16,6 +17,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+@Slf4j
 @Component
 public class JwtService {
 
@@ -41,7 +43,7 @@ public class JwtService {
                 .setClaims(claims)
                 .setSubject(email)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 1 * 60 * 1000))
+                .setExpiration(new Date(System.currentTimeMillis() + 5 * 60 * 1000))
                 .signWith(getSignKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
@@ -90,6 +92,7 @@ public class JwtService {
         //final String username = extractUsername(token);
         
         //return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+    	//log.info(String.format("validate token %b",!isTokenExpired(token)));
         return !isTokenExpired(token);
     }
 }

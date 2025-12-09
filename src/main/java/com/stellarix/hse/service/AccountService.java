@@ -34,7 +34,7 @@ public class AccountService implements UserDetailsService{
 	@Override
 	public UserDetails loadUserByUsername(String usernameOrEmail) throws UsernameNotFoundException {
 		List<String> roles = new ArrayList<>();
-		roles.add("hse");
+		roles.add("HSE");
 		Optional<Hse> account = hseRepository.findByUsernameOrEmail(usernameOrEmail, usernameOrEmail);
 		
 		if (account.isEmpty()) {
