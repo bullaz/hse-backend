@@ -18,7 +18,7 @@ public class Config {
         		
         		/*insert HSE accounts here for now*/
         		/**/
-//        		Hse user = new Hse(0,"andersonmahosi@gmail.com","Mahosy","Anderson","bulla","bulla");
+//        		Hse user = new Hse(0,"andersonmahosi@gmail.com","Mahosy","Anderson","bulla","motdepasse2002");
 //            	accountService.addUser(user);
 //            	
 //            	log.info("after adding hse account");

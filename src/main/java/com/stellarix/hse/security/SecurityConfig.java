@@ -1,5 +1,8 @@
 package com.stellarix.hse.security;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
@@ -22,7 +25,9 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import com.stellarix.hse.filter.JwtAuthFilter;
 
 import java.util.Arrays;
+import java.util.List;
 
+@Slf4j
 @Configuration @EnableWebSecurity @RequiredArgsConstructor
 public class SecurityConfig /*extends WebSecurityConfigurerAdapter */{
 	
@@ -32,14 +37,19 @@ public class SecurityConfig /*extends WebSecurityConfigurerAdapter */{
     private final UserDetailsService userDetailsService;
     private final PasswordEncoder passwordEncoder;
     
+    @Value("${frontend.url}")
+    private String frontendUrl; 
+    
     
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())
+        	.cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            
+        	.csrf(csrf -> csrf.disable())
 
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/hse/test" , "/hse/signin", "/hse/signup", "/hse/refresh_token", "/hse/test").permitAll()
+                .requestMatchers("/hse/test" , "/hse/signin", "/hse/signup", "/hse/refresh_token", "/hse/test", "/hse/logout").permitAll()
                 
                 .requestMatchers("/hse/**").hasAuthority("HSE")
                 
@@ -63,8 +73,16 @@ public class SecurityConfig /*extends WebSecurityConfigurerAdapter */{
 //        configuration.setAllowedOrigins(List.of("http://localhost:8005"));
 //        configuration.setAllowedMethods(List.of("GET","POST"));
 //        configuration.setAllowedHeaders(List.of("Authorization","Content-Type"));
-
+        //log.info(frontendUrl);
+        String origin = frontendUrl.endsWith("/") ? 
+                frontendUrl.substring(0, frontendUrl.length() - 1) : frontendUrl;
+        
+        configuration.setAllowedOrigins(List.of(origin));
         configuration.setAllowedMethods(Arrays.asList("POST", "GET", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept"));
+        configuration.setAllowCredentials(true); // Allow credentials (cookies, authorization headers)
+        configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
+        
         final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;

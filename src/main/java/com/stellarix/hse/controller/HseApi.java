@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.core.exc.StreamWriteException;
@@ -77,16 +78,10 @@ public class HseApi {
     }
 	
 	
-//	@GetMapping("/user/profile")
-//    @PreAuthorize("hasAuthority('HSE')")
-//    public String userProfile() {
-//        return "User profile is shown here";
-//    }
-//	
-	
 	@PostMapping("/signin")
     public void authenticateAndGetToken(@RequestBody AuthRequest authRequest, HttpServletResponse response) throws StreamWriteException, DatabindException, IOException {
-        Authentication authentication = authenticationManager.authenticate(
+        log.info("hereee");
+		Authentication authentication = authenticationManager.authenticate(
             new UsernamePasswordAuthenticationToken(authRequest.getUsername(), authRequest.getPassword())
         );
         if (authentication.isAuthenticated()) {
@@ -118,27 +113,26 @@ public class HseApi {
 	
 	
 	@GetMapping("/protected_url")
+	//@PreAuthorize("hasAuthority('HSE')")
 	public String testProtected() {
 		return "You're able to access protected HSE url that require authentication and authorization!";
 	}
 	
-//	@GetMapping("/protected_url")
-//	public String testProtected() {
-//		return "You're able to access protected HSE url that require authentication and authorization!";
-//	}
+	@PostMapping("/verify_token")
+	public boolean verifyToken(@RequestHeader(value = "Authorization", required = false) String token) {
+		token = token.substring(7);
+		return jwtService.validateToken(token);
+	}
 	
 	
 	@PostMapping("/refresh_token")
     public ResponseEntity<?> refreshToken(
             @CookieValue(value = "refresh_token", required = false) String refreshTokenCookie,
-            @RequestHeader(value = "X-Refresh-Token", required = false) String refreshTokenHeader,
             HttpServletResponse response) {
-        
-		//log.info("hereeeeee");
-		
+        		
 		log.info(refreshTokenCookie);
 		
-        String refreshToken = refreshTokenCookie != null ? refreshTokenCookie : refreshTokenHeader;
+        String refreshToken = refreshTokenCookie ;
         
         if (refreshToken == null || refreshToken.isBlank()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -196,6 +190,22 @@ public class HseApi {
                 .body(new ErrorResponse("Server error"));
         }
     }
+	
+	@PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletResponse response) {
+        Cookie cookie = new Cookie("refresh_token", null);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);
+        cookie.setPath("/hse/refresh_token");
+        cookie.setMaxAge(0);
+        response.addCookie(cookie);
+
+        return ResponseEntity.ok("Logged out successfully");
+    }
+	
+//	@GetMapping("/toko5s")
+//	public List<Toko5> getListToko5ByDate(@RequestParam)
+//	
 	
 }
 	
