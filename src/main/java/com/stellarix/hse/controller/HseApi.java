@@ -1,11 +1,14 @@
 package com.stellarix.hse.controller;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -36,6 +39,7 @@ import com.stellarix.hse.service.JwtService;
 
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
@@ -79,8 +83,8 @@ public class HseApi {
 	
 	
 	@PostMapping("/signin")
-    public void authenticateAndGetToken(@RequestBody AuthRequest authRequest, HttpServletResponse response) throws StreamWriteException, DatabindException, IOException {
-        log.info("hereee");
+    public ResponseEntity<Map<String, String>> authenticateAndGetToken(@RequestBody AuthRequest authRequest, HttpServletResponse response) throws StreamWriteException, DatabindException, IOException {
+        log.info("SIGN IN API");
 		Authentication authentication = authenticationManager.authenticate(
             new UsernamePasswordAuthenticationToken(authRequest.getUsername(), authRequest.getPassword())
         );
@@ -91,15 +95,19 @@ public class HseApi {
             Map<String, String> tokens =  jwtService.generateToken(user.getEmail());
             String refreshToken = tokens.get("refresh_token");
             tokens.remove("refresh_token");
-            Cookie refreshCookie = new Cookie("refresh_token", refreshToken);
-            refreshCookie.setHttpOnly(true);
-            refreshCookie.setSecure(true); // Use HTTPS in production
-            refreshCookie.setPath("/hse/refresh_token");
-            refreshCookie.setMaxAge(7 * 24 * 60 * 60); // 7 days
-            response.addCookie(refreshCookie);
             
-            response.setContentType(APPLICATION_JSON_VALUE);
-            new ObjectMapper().writeValue(response.getOutputStream(), tokens);
+            
+            ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken)
+                    .httpOnly(true)
+                    .secure(false) // Set to true in production with HTTPS
+                    .path("/")
+                    .maxAge(7 * 24 * 60 * 60)
+                    .sameSite("Lax") // Or "Strict" or "None" (None requires Secure=true)
+                    .build();
+                
+                return ResponseEntity.ok()
+                    .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+                    .body(tokens);
             
         } else {
             throw new UsernameNotFoundException("Invalid user request!");
@@ -119,31 +127,67 @@ public class HseApi {
 	}
 	
 	@PostMapping("/verify_token")
-	public boolean verifyToken(@RequestHeader(value = "Authorization", required = false) String token) {
+	public Map<String, Boolean> verifyToken(@RequestHeader(value = "Authorization", required = false) String token){
+		log.info("calling verify token api");
 		token = token.substring(7);
-		return jwtService.validateToken(token);
+		//log.info(jwtService.validateToken(token)? "it is fk true" : "it is fk false");
+		boolean state = jwtService.validateToken(token);
+		log.info(Boolean.valueOf(state).toString());
+		Map<String, Boolean> temp = new HashMap<>();
+		temp.put("token_state", Boolean.valueOf(state));
+		return temp;
 	}
 	
 	
 	@PostMapping("/refresh_token")
     public ResponseEntity<?> refreshToken(
-            @CookieValue(value = "refresh_token", required = false) String refreshTokenCookie,
+            @CookieValue(value = "refresh_token", required = false) String refreshTokenCookie, 
+            HttpServletRequest request,
             HttpServletResponse response) {
-        		
-		log.info(refreshTokenCookie);
+		log.info(String.format("calling refresh token api %s",refreshTokenCookie));
+		
+		
+		log.info("=== REQUEST HEADERS ===");
+	    Collections.list(request.getHeaderNames())
+	        .forEach(headerName -> {
+	            String headerValue = request.getHeader(headerName);
+	            log.info("{}: {}", headerName, headerValue);
+	        });
+	    
+	    // Check cookies
+	    Cookie[] cookies = request.getCookies();
+	    if (cookies == null) {
+	        log.warn("=== NO COOKIES IN REQUEST ===");
+	    } else {
+	        log.info("=== COOKIES FOUND ({}) ===", cookies.length);
+	        for (Cookie cookie : cookies) {
+	            log.info("Cookie - Name: '{}', Value: '{}...', Path: {}, Domain: {}, Secure: {}, HttpOnly: {}",
+	                cookie.getName(),
+	                cookie.getValue() != null && cookie.getValue().length() > 10 
+	                    ? cookie.getValue().substring(0, 10) + "..." 
+	                    : cookie.getValue(),
+	                cookie.getPath(),
+	                cookie.getDomain(),
+	                cookie.getSecure(),
+	                cookie.isHttpOnly() // Note: This might not be accurate in request
+	            );
+	        }
+	    }
+	    
+	    
 		
         String refreshToken = refreshTokenCookie ;
         
         if (refreshToken == null || refreshToken.isBlank()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(new ErrorResponse("Refresh token missing"));
+                .body("Refresh token missing");
         }
         
         try {
             // Validate refresh token (different validation than access token)
             if (!jwtService.validateToken(refreshToken)) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new ErrorResponse("Invalid refresh token"));
+                    .body("Invalid refresh token");
             }
             
             String username = jwtService.extractUsername(refreshToken);
@@ -182,12 +226,12 @@ public class HseApi {
             responseMap.put("access_token",newAccessToken);
             return ResponseEntity.ok(responseMap);
             
-        } catch (ExpiredJwtException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(new ErrorResponse("Refresh token expired"));
+        } catch (ExpiredJwtException e) { //no expiredjwtexception here throwed anywhere 
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).
+                body("your refresh token is expired");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorResponse("Server error"));
+                .body("Server error");
         }
     }
 	

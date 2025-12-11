@@ -22,4 +22,6 @@ public interface QuestionRepository extends JpaRepository<Question, Integer>{
             "AND q.required = true", 
     nativeQuery = true)
 	List<Question> findToko5Probleme(@Param("toko5Id") UUID toko5Id);
+	
+	List<Question> findByCategorieAndRequired(String categorie,  Boolean required);
 }

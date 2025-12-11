@@ -43,7 +43,7 @@ public class JwtService {
                 .setClaims(claims)
                 .setSubject(email)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 5 * 60 * 1000))
+                .setExpiration(new Date(System.currentTimeMillis() + 5 * 1000))
                 .signWith(getSignKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
@@ -53,7 +53,8 @@ public class JwtService {
                 .setClaims(claims)
                 .setSubject(email)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000))
+                //.setExpiration(new Date(System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000))
+                .setExpiration(new Date(System.currentTimeMillis() + 60 * 1000))
                 .signWith(getSignKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
@@ -63,20 +64,20 @@ public class JwtService {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String extractUsername(String token) {
+    public String extractUsername(String token) throws Exception{
         return extractClaim(token, Claims::getSubject);
     }
 
-    public Date extractExpiration(String token) {
+    public Date extractExpiration(String token) throws Exception{
         return extractClaim(token, Claims::getExpiration);
     }
 
-    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
+    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) throws Exception {
         final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);
     }
 
-    private Claims extractAllClaims(String token) {
+    private Claims extractAllClaims(String token) throws Exception{
         return Jwts.parserBuilder()
                 .setSigningKey(getSignKey())
                 .build()
@@ -84,15 +85,21 @@ public class JwtService {
                 .getBody();
     }
 
-    private Boolean isTokenExpired(String token) {
+    private Boolean isTokenExpired(String token) throws Exception{
         return extractExpiration(token).before(new Date());
     }
 
-    public Boolean validateToken(String token/*, UserDetails userDetails*/) {
+    public Boolean validateToken(String token/*, UserDetails userDetails*/){
         //final String username = extractUsername(token);
         
         //return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
     	//log.info(String.format("validate token %b",!isTokenExpired(token)));
-        return !isTokenExpired(token);
+    	boolean etat = false;
+    	try {
+    		etat = !isTokenExpired(token);
+    	}catch(Exception e) {
+    		etat = false;
+    	}
+    	return etat;
     }
 }

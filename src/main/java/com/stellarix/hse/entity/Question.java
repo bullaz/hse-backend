@@ -33,7 +33,7 @@ public class Question {
 	
 	private String pictogramme;
 	
-	@Check(constraints = "categorie in ('valide','invalide','ongoing')")
+	@Check(constraints = "categorie in ('think','organise','risk','epi','safety')")
 	private String categorie;
 	
 	@Column(nullable = false)
