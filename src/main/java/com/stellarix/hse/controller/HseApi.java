@@ -1,9 +1,12 @@
 package com.stellarix.hse.controller;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -20,6 +23,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -32,7 +36,11 @@ import com.fasterxml.jackson.databind.DatabindException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stellarix.hse.entity.AuthRequest;
 import com.stellarix.hse.entity.Hse;
+import com.stellarix.hse.entity.Question;
+import com.stellarix.hse.entity.Toko5;
 import com.stellarix.hse.repository.HseRepository;
+import com.stellarix.hse.repository.QuestionRepository;
+import com.stellarix.hse.repository.Toko5Repository;
 import com.stellarix.hse.service.AccountService;
 import com.stellarix.hse.service.ErrorResponse;
 import com.stellarix.hse.service.JwtService;
@@ -64,14 +72,20 @@ public class HseApi {
     
     private UserDetailsService userDetailsService;
 	
+    private Toko5Repository toko5Repository;
+    
+    private QuestionRepository questionRepository;
 
     @Autowired
-    public HseApi(AccountService service, JwtService jwtService, AuthenticationManager authenticationManager, HseRepository hseRepository, UserDetailsService userDetailsService) {
+    public HseApi(AccountService service, JwtService jwtService, AuthenticationManager authenticationManager, HseRepository hseRepository, 
+    		UserDetailsService userDetailsService, Toko5Repository toko5Repository, QuestionRepository questionRepository) {
     	this.service = service;
     	this.jwtService = jwtService;
     	this.authenticationManager = authenticationManager;
     	this.hseRepository = hseRepository;
     	this.userDetailsService = userDetailsService;
+    	this.toko5Repository = toko5Repository;
+    	this.questionRepository = questionRepository;
     }
     
     
@@ -247,9 +261,26 @@ public class HseApi {
         return ResponseEntity.ok("Logged out successfully");
     }
 	
-//	@GetMapping("/toko5s")
-//	public List<Toko5> getListToko5ByDate(@RequestParam)
-//	
+	
+	@GetMapping("/toko5s")
+	public List<Toko5> getListToko5ByDate(@RequestParam("date") String date) throws Exception{
+		//add string format verification;
+		return toko5Repository.findByDate(date);	
+	}
+	
+	
+	@GetMapping("/toko5s/toko5/{id}")
+	public Toko5 getToko5(@PathVariable("id") String id) throws Exception{
+		Optional<Toko5> opt = toko5Repository.findById(UUID.fromString(id));
+		if(opt.isEmpty()) return null;
+		return opt.get();
+	}
+	
+	
+	@GetMapping("/toko5s/toko5/{id}/problems")
+	public List<Question> getListProblem(@PathVariable("id") String id) throws Exception{
+		return questionRepository.findToko5ListProblem(UUID.fromString(id));
+	}
 	
 }
 	

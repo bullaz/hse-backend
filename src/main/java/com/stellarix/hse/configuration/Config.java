@@ -35,25 +35,46 @@ public class Config {
 //            	accountService.addUser(user);
 //            	
 //            	log.info("after adding hse account");
-        		
-//        		List<Question> listQuestion = questionRepository.findByCategorieAndRequired("risk",false);
+//        		
+        		List<Question> listQuestion = questionRepository.findByCategorieAndRequired("risk",false);
 //
 //        		log.info(listQuestion.toString());
 //        		
 //        		List<Commentaire> listComs = new ArrayList<Commentaire>();
 //        		listComs.add(new Commentaire(null,null,"Pierre","Jean","Commentaire 1 de Jean Pierre"));
 //        		listComs.add(new Commentaire(null,null,"Pierre","Jean","Commentaire 2 de Jean Pierre"));
-//        		
+//        			
 //        		List<MesureControle> listControle  = new ArrayList<MesureControle>();
 //        		listControle.add(new MesureControle(null,null,listQuestion.get(1),"mesure prise 1",true));
 //        		listControle.add(new MesureControle(null,null,listQuestion.get(3),"mesure prise 2",true));
 //        		
 //        		Toko5 test = new Toko5(UUID.randomUUID(),"Rakoto","Jean",LocalDateTime.now(),"valide", listComs, listControle);
 //        		test = toko5Repository.save(test);
-//        		
-//        		//List<Toko5> list = toko5Repository.findAll();
 //        		log.info(test.toString());
+
         		
+//        		Toko5 toko51 = new Toko5(UUID.randomUUID(),"Rakoto","Jean",LocalDateTime.now(),"valide", null, null);
+//        		
+//        		List<Commentaire> listComs = new ArrayList<Commentaire>();
+//        		listComs.add(new Commentaire(null,toko51,"Pierre","Jean","Commentaire 1 de Jean Pierre"));
+//        		listComs.add(new Commentaire(null,toko51,"Pierre","Jean","Commentaire 2 de Jean Pierre"));
+//        		
+//        		List<MesureControle> listControle  = new ArrayList<MesureControle>();
+//        		listControle.add(new MesureControle(null,toko51,listQuestion.get(1),"mesure prise 1",true));
+//        		listControle.add(new MesureControle(null,toko51,listQuestion.get(3),"mesure prise 2",true));
+//        		
+//        		toko51.setListCommentaire(listComs);
+//        		toko51.setListMesureControle(listControle);
+//        		
+//        		toko51 = toko5Repository.save(toko51);
+        		
+        		//List<Toko5> list = toko5Repository.findAll();
+        		
+        		
+//        		List<Toko5> test = toko5Repository.findAll();
+//        		
+//        		log.info(test.getFirst().toString());
+//        		
         		
         	}catch(Exception e) {
         		log.error("some errors in the config class", e);
