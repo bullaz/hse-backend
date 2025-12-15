@@ -15,6 +15,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -61,5 +62,7 @@ public class Toko5 {
 	)
     private List<MesureControle> listMesureControle;
 	
-    
+	//new field verify if there are errors caused by this maybe we don't know
+	@Transient
+	private List<Question> listProblem;
 }

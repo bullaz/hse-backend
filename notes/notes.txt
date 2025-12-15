@@ -1,0 +1,40 @@
+-memoire: add mcp and mpd
+
+-react-native:
+			Bundle size optimization
+To get smaller bundle size by excluding modules you don't use, you can use our optional babel plugin. The plugin automatically rewrites the import statements so that only the modules you use are imported instead of the whole library. Add react-native-paper/babel to the plugins section in your babel.config.js for production environment. It should look like this:
+
+module.exports = {
+  presets: ['module:metro-react-native-babel-preset'],
+  env: {
+    production: {
+      plugins: ['react-native-paper/babel'],
+    },
+  },
+};
+
+If you created your project using Expo, it'll look something like this:
+
+module.exports = function (api) {
+  api.cache(true);
+  return {
+    presets: ['babel-preset-expo'],
+    env: {
+      production: {
+        plugins: ['react-native-paper/babel'],
+      },
+    },
+  };
+};
+
+The plugin only works if you are importing the library using ES2015 import statements and not with require.
+
+note
+The above examples are for the latest react-native using Babel 7. If you have react-native <= 0.55, you'll have a .babelrc file instead of a babel.config.js file and the content of the file will be different.
+
+If you're using Flow for typechecking your code, you need to add the following under the [options] section in your .flowconfig:
+
+module.file_ext=.js
+module.file_ext=.native.js
+module.file_ext=.android.js
+module.file_ext=.ios.js

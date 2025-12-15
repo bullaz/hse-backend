@@ -1,0 +1,29 @@
+subtilite a finir :
+
+- button dessous mesure controle
+- delete measure controle
+- change icon autre risk hazard
+- invalide text explaining what was wrong
+- those header padding problems bruh
+
+
+-verify if mobile is production ready
+
+**** remember: there is potential memory leak in that authProvider (about mount)
+authProvider(potential)
+
+front: 
+
+-better handling of errors (both backend and frontend) (login for example, don't just throw errors without handling it ) (backend: choose carefully the error codes to send)
+-
+
+
+
+
+add: description field to toko5: (little description of contractant's job)
+
+
+
+I think portal component should only wrap modal in your project ;
+
+The <CameraView> component does not support children. This may lead to inconsistent behaviour or crashes. If you want to render content on top of the Camera, consider using absolute positioning.

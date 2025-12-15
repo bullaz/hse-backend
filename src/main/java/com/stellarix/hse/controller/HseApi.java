@@ -103,7 +103,7 @@ public class HseApi {
 	@CrossOrigin
 	@GetMapping(path="test")
 	public String test() throws Exception {
-        return "You're able to access unprotected url";
+        return "You're able to access unprotected stellarix hse url";
     }
 	
 	
@@ -284,6 +284,9 @@ public class HseApi {
 	public Toko5 getToko5(@PathVariable("id") String id) throws Exception{
 		Optional<Toko5> opt = toko5Repository.findById(UUID.fromString(id));
 		if(opt.isEmpty()) return null;
+		List<Question> problems = questionRepository.findToko5ListProblem(UUID.fromString(id));
+		Toko5 toko5 = opt.get();
+		toko5.setListProblem(problems);
 		return opt.get();
 	}
 	
