@@ -1,6 +1,8 @@
 package com.stellarix.hse.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -43,6 +45,13 @@ public class MesureControle {
 	@JsonIgnore  
 	@ToString.Exclude
 	private Toko5 toko5;
+	
+	@JsonProperty("toko5Id")
+    @JsonUnwrapped(prefix = "")
+    public String getToko5Id() {
+        return toko5 != null ? toko5.getToko5Id().toString() : null;
+    }
+
 	
 	@ManyToOne(
             cascade = CascadeType.PERSIST,

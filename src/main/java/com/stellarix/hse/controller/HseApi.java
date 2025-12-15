@@ -35,10 +35,14 @@ import com.fasterxml.jackson.core.exc.StreamWriteException;
 import com.fasterxml.jackson.databind.DatabindException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stellarix.hse.entity.AuthRequest;
+import com.stellarix.hse.entity.Commentaire;
 import com.stellarix.hse.entity.Hse;
+import com.stellarix.hse.entity.MesureControle;
 import com.stellarix.hse.entity.Question;
 import com.stellarix.hse.entity.Toko5;
+import com.stellarix.hse.repository.CommentaireRepository;
 import com.stellarix.hse.repository.HseRepository;
+import com.stellarix.hse.repository.MesureControleRepository;
 import com.stellarix.hse.repository.QuestionRepository;
 import com.stellarix.hse.repository.Toko5Repository;
 import com.stellarix.hse.service.AccountService;
@@ -75,10 +79,15 @@ public class HseApi {
     private Toko5Repository toko5Repository;
     
     private QuestionRepository questionRepository;
+    
+    private CommentaireRepository commentaireRepository;
+    
+    private MesureControleRepository mesureControleRepository;
 
     @Autowired
     public HseApi(AccountService service, JwtService jwtService, AuthenticationManager authenticationManager, HseRepository hseRepository, 
-    		UserDetailsService userDetailsService, Toko5Repository toko5Repository, QuestionRepository questionRepository) {
+    		UserDetailsService userDetailsService, Toko5Repository toko5Repository, QuestionRepository questionRepository,
+    		CommentaireRepository commentaireRepository, MesureControleRepository mesureControleRepository) {
     	this.service = service;
     	this.jwtService = jwtService;
     	this.authenticationManager = authenticationManager;
@@ -86,6 +95,8 @@ public class HseApi {
     	this.userDetailsService = userDetailsService;
     	this.toko5Repository = toko5Repository;
     	this.questionRepository = questionRepository;
+    	this.commentaireRepository = commentaireRepository;
+    	this.mesureControleRepository = mesureControleRepository;
     }
     
     
@@ -280,6 +291,16 @@ public class HseApi {
 	@GetMapping("/toko5s/toko5/{id}/problems")
 	public List<Question> getListProblem(@PathVariable("id") String id) throws Exception{
 		return questionRepository.findToko5ListProblem(UUID.fromString(id));
+	}
+	
+	@GetMapping("/toko5s/toko5/{id}/comments")
+	public List<Commentaire> getListCommentaire(@PathVariable("id") String id) throws Exception{
+		return commentaireRepository.findByToko5Id(UUID.fromString(id));
+	}
+	
+	@GetMapping("/toko5s/toko5/{id}/mesures")
+	public List<MesureControle> getListMesure(@PathVariable("id") String id) throws Exception{
+		return mesureControleRepository.findByToko5Id(UUID.fromString(id));
 	}
 	
 }

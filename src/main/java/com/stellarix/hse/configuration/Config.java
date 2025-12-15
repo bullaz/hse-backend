@@ -36,7 +36,7 @@ public class Config {
 //            	
 //            	log.info("after adding hse account");
 //        		
-        		List<Question> listQuestion = questionRepository.findByCategorieAndRequired("risk",false);
+//        		List<Question> listQuestion = questionRepository.findByCategorieAndRequired("risk",false);
 //
 //        		log.info(listQuestion.toString());
 //        		
