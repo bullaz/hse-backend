@@ -22,9 +22,11 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -280,6 +282,12 @@ public class HseApi {
 	}
 	
 	
+	@PostMapping("/toko5s")
+	public Toko5 newToko5(Toko5 toko5) throws Exception{
+		return toko5Repository.save(toko5);
+	}
+	
+	
 	@GetMapping("/toko5s/toko5/{id}")
 	public Toko5 getToko5(@PathVariable("id") String id) throws Exception{
 		Optional<Toko5> opt = toko5Repository.findById(UUID.fromString(id));
@@ -306,5 +314,22 @@ public class HseApi {
 		return mesureControleRepository.findByToko5Id(UUID.fromString(id));
 	}
 	
+	@DeleteMapping("/toko5s/commentaires/{id}")
+	public String deleteCommentaire(@PathVariable("id") int comId) throws Exception{
+		commentaireRepository.deleteById(comId);
+		return "Comment deleted successfully";
+	}
+	
+	@PutMapping("/toko5s/commentaires/{id}")
+	public String updateCommentaire(@PathVariable("id") int id, @RequestParam("commentaire") String commentaire) throws Exception{
+		Optional<Commentaire> opt = commentaireRepository.findById(id);
+		if(opt.isPresent()) {
+			Commentaire com = opt.get();
+			com.setCommentaire(commentaire);
+			commentaireRepository.save(com);
+			return "comment updated successfully";
+		}
+		return "that toko5 comment doesn't exist";
+	}
 }
 	
