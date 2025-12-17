@@ -13,6 +13,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -85,11 +86,13 @@ public class HseApi {
     private CommentaireRepository commentaireRepository;
     
     private MesureControleRepository mesureControleRepository;
+    
+    private SimpMessagingTemplate messagingTemplate;
 
     @Autowired
     public HseApi(AccountService service, JwtService jwtService, AuthenticationManager authenticationManager, HseRepository hseRepository, 
     		UserDetailsService userDetailsService, Toko5Repository toko5Repository, QuestionRepository questionRepository,
-    		CommentaireRepository commentaireRepository, MesureControleRepository mesureControleRepository) {
+    		CommentaireRepository commentaireRepository, MesureControleRepository mesureControleRepository, SimpMessagingTemplate messagingTemplate) {
     	this.service = service;
     	this.jwtService = jwtService;
     	this.authenticationManager = authenticationManager;
@@ -99,6 +102,7 @@ public class HseApi {
     	this.questionRepository = questionRepository;
     	this.commentaireRepository = commentaireRepository;
     	this.mesureControleRepository = mesureControleRepository;
+    	this.messagingTemplate = messagingTemplate;
     }
     
     
@@ -150,6 +154,12 @@ public class HseApi {
 	@GetMapping("/protected_url")
 	//@PreAuthorize("hasAuthority('HSE')")
 	public String testProtected() {
+		try {
+	        messagingTemplate.convertAndSend("/topic/test", "websocket test");
+	        log.info("WebSocket notification sent successfully");
+        } catch (Exception e) {
+            log.error("Failed to send WebSocket notification", e);
+        }
 		return "You're able to access protected HSE url that require authentication and authorization!";
 	}
 	
@@ -282,11 +292,20 @@ public class HseApi {
 	}
 	
 	
+	@PreAuthorize("permitAll()")
 	@PostMapping("/toko5s")
-	public Toko5 newToko5(Toko5 toko5) throws Exception{
-		return toko5Repository.save(toko5);
+	public Toko5 newToko5(@RequestBody Toko5 toko5) throws Exception{
+		log.info(toko5.toString());
+		Toko5 savedToko5 = toko5Repository.save(toko5);
+		
+		try {
+	        messagingTemplate.convertAndSend("/topic/toko5s/new", savedToko5);
+	        log.info("WebSocket notification sent successfully");
+        } catch (Exception e) {
+            log.error("Failed to send WebSocket notification", e);
+        }
+		return savedToko5;
 	}
-	
 	
 	@GetMapping("/toko5s/toko5/{id}")
 	public Toko5 getToko5(@PathVariable("id") String id) throws Exception{
@@ -296,6 +315,14 @@ public class HseApi {
 		Toko5 toko5 = opt.get();
 		toko5.setListProblem(problems);
 		return opt.get();
+	}
+	
+	
+	@PutMapping("/toko5s/toko5/{id}")
+	public Toko5 updateToko5(@PathVariable("id") String id, Toko5 updated) throws Exception{
+		Optional<Toko5> opt = toko5Repository.findById(UUID.fromString(id));
+		if(opt.isEmpty()) return null;
+		return toko5Repository.save(updated);
 	}
 	
 	

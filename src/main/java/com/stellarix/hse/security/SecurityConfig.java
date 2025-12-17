@@ -6,10 +6,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 //import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
@@ -28,7 +30,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @Slf4j
-@Configuration @EnableWebSecurity @RequiredArgsConstructor
+@Configuration @EnableWebSecurity @EnableMethodSecurity @RequiredArgsConstructor
 public class SecurityConfig /*extends WebSecurityConfigurerAdapter */{
 	
 	@Lazy
@@ -49,7 +51,9 @@ public class SecurityConfig /*extends WebSecurityConfigurerAdapter */{
         	.csrf(csrf -> csrf.disable())
 
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/hse/test" , "/hse/signin", "/hse/signup", "/hse/refresh_token", "/hse/test", "/hse/logout", "/hse/verify_token", "/hse/toko5s/toko5/{id}").permitAll()
+                .requestMatchers("/hse/test" , "/hse/signin", "/hse/signup", "/hse/refresh_token", "/hse/test", "/hse/logout", "/hse/verify_token", "/hse/toko5s/toko5/{id}","/hse/ws/**", "/ws/**").permitAll()
+                
+                .requestMatchers(HttpMethod.POST, "/hse/toko5s").permitAll()
                 
                 .requestMatchers("/hse/**").hasAuthority("HSE")
                 
