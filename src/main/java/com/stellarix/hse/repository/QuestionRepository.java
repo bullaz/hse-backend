@@ -24,4 +24,6 @@ public interface QuestionRepository extends JpaRepository<Question, Integer>{
 	List<Question> findToko5ListProblem(@Param("toko5Id") UUID toko5Id);
 	
 	List<Question> findByCategorieAndRequired(String categorie,  Boolean required);
+	
+	Optional<Question> findByNom(String nom);
 }

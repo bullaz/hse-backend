@@ -42,15 +42,19 @@ import com.stellarix.hse.entity.Commentaire;
 import com.stellarix.hse.entity.Hse;
 import com.stellarix.hse.entity.MesureControle;
 import com.stellarix.hse.entity.Question;
+import com.stellarix.hse.entity.Reponse;
 import com.stellarix.hse.entity.Toko5;
 import com.stellarix.hse.repository.CommentaireRepository;
 import com.stellarix.hse.repository.HseRepository;
 import com.stellarix.hse.repository.MesureControleRepository;
 import com.stellarix.hse.repository.QuestionRepository;
+import com.stellarix.hse.repository.ReponseRepository;
 import com.stellarix.hse.repository.Toko5Repository;
 import com.stellarix.hse.service.AccountService;
 import com.stellarix.hse.service.ErrorResponse;
 import com.stellarix.hse.service.JwtService;
+import com.stellarix.hse.service.ReponseDTO;
+import com.stellarix.hse.service.UpdateToko5Request;
 
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.http.Cookie;
@@ -87,12 +91,20 @@ public class HseApi {
     
     private MesureControleRepository mesureControleRepository;
     
+    private ReponseRepository reponseRepository;
+    
     private SimpMessagingTemplate messagingTemplate;
+    
+    public final static Map<String, String> listEtatToko5 = Map.of(
+    		"valide", "valide",
+    		"invalide", "invalide",
+    		"encours", "ongoing"
+    		);
 
     @Autowired
     public HseApi(AccountService service, JwtService jwtService, AuthenticationManager authenticationManager, HseRepository hseRepository, 
     		UserDetailsService userDetailsService, Toko5Repository toko5Repository, QuestionRepository questionRepository,
-    		CommentaireRepository commentaireRepository, MesureControleRepository mesureControleRepository, SimpMessagingTemplate messagingTemplate) {
+    		CommentaireRepository commentaireRepository, MesureControleRepository mesureControleRepository, SimpMessagingTemplate messagingTemplate, ReponseRepository reponseRepository) {
     	this.service = service;
     	this.jwtService = jwtService;
     	this.authenticationManager = authenticationManager;
@@ -103,6 +115,7 @@ public class HseApi {
     	this.commentaireRepository = commentaireRepository;
     	this.mesureControleRepository = mesureControleRepository;
     	this.messagingTemplate = messagingTemplate;
+    	this.reponseRepository = reponseRepository;
     }
     
     
@@ -272,6 +285,7 @@ public class HseApi {
         }
     }
 	
+	//verify this method
 	@PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletResponse response) {
         Cookie cookie = new Cookie("refresh_token", null);
@@ -302,10 +316,17 @@ public class HseApi {
 	        messagingTemplate.convertAndSend("/topic/toko5s/new", savedToko5);
 	        log.info("WebSocket notification sent successfully");
         } catch (Exception e) {
-            log.error("Failed to send WebSocket notification", e);
+            log.error("Failed to send WebSocket message", e);
         }
 		return savedToko5;
 	}
+	
+//	@PreAuthorize("permitAll()")
+//	@PostMapping("/toko5s/reponses")
+//	public List<Reponse> saveListReponse(@RequestBody List<Reponse> listReponse) throws Exception{
+//		reponseRepository
+//		return null;
+//	}
 	
 	@GetMapping("/toko5s/toko5/{id}")
 	public Toko5 getToko5(@PathVariable("id") String id) throws Exception{
@@ -318,13 +339,53 @@ public class HseApi {
 	}
 	
 	
-	@PutMapping("/toko5s/toko5/{id}")
-	public Toko5 updateToko5(@PathVariable("id") String id, Toko5 updated) throws Exception{
-		Optional<Toko5> opt = toko5Repository.findById(UUID.fromString(id));
-		if(opt.isEmpty()) return null;
-		return toko5Repository.save(updated);
-	}
+//	@PutMapping("/toko5s/toko5/{id}")
+//	public Toko5 updateToko5(@PathVariable("id") String id,@RequestBody Toko5 updated) throws Exception{
+//		//Optional<Toko5> opt = toko5Repository.findById(UUID.fromString(id));
+//		//if(opt.isEmpty()) return null;
+//		log.info(updated.toString());
+//		Toko5 saved = toko5Repository.save(updated);
+//		if(saved.getEtat().equalsIgnoreCase(listEtatToko5.get("invalide"))) {
+//			try {
+//				messagingTemplate.convertAndSend("/topic/toko5s/invalid", saved);
+//			} catch (Exception e) {
+//				log.error("Failed to send WebSocket message", e);
+//			}
+//		}
+//		return saved;
+//	}
 	
+	//BE CAREFUL WITH THE LIST COMS/MESURE HANDLE THAT LATER: YOU GOT RETRIEVE THE LIST IN DATABASE BEFORE SAVING
+	@PutMapping("/toko5s/toko5/{id}")
+	public Toko5 updateToko5(@PathVariable("id") String id,@RequestParam("withReponse") boolean withRep, @RequestBody UpdateToko5Request dto) throws Exception{
+		//Optional<Toko5> opt = toko5Repository.findById(UUID.fromString(id));
+		//if(opt.isEmpty()) return null;
+		log.info(dto.toString());
+		Toko5 updated = dto.getToko5();
+
+		if(withRep) {
+			
+			List<ReponseDTO> listReponseDTO = dto.getListReponseDTO();
+			
+			for(ReponseDTO reponseDTO : listReponseDTO) {
+				Optional<Question> optQuestion = questionRepository.findByNom(reponseDTO.getNomQuestion());
+				if(optQuestion.isPresent()) {
+					Question question = optQuestion.get();
+					Reponse rep = new Reponse(null, updated,question,reponseDTO.getValeur());
+					reponseRepository.save(rep);
+				}
+			}
+		}
+		Toko5 saved = toko5Repository.save(updated);
+		if(saved.getEtat().equalsIgnoreCase(listEtatToko5.get("invalide"))) {
+			try {
+				messagingTemplate.convertAndSend("/topic/toko5s/invalid", saved);
+			} catch (Exception e) {
+				log.error("Failed to send WebSocket message", e);
+			}
+		}
+		return saved;
+	}
 	
 	@GetMapping("/toko5s/toko5/{id}/problems")
 	public List<Question> getListProblem(@PathVariable("id") String id) throws Exception{
@@ -335,6 +396,7 @@ public class HseApi {
 	public List<Commentaire> getListCommentaire(@PathVariable("id") String id) throws Exception{
 		return commentaireRepository.findByToko5Id(UUID.fromString(id));
 	}
+
 	
 	@GetMapping("/toko5s/toko5/{id}/mesures")
 	public List<MesureControle> getListMesure(@PathVariable("id") String id) throws Exception{

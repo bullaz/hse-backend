@@ -76,3 +76,19 @@ const styles = StyleSheet.create({
 });
 
 export default NetworkStatusComponent;
+
+
+export interface Toko5Json {
+  toko5_id: string,
+  nom_contractant: string,
+  prenom_contractant: string,
+  date_heure: string,
+  etat: string,
+  listMesureControle: [],
+  listCommentaire: [],
+  listProblem: []
+}
+
+toko5Json should be camelCase
+
+possible : no internet during the creating of toko5 .. the invalide (there is internet) (so update doesn't work.. should verify and use add or update)

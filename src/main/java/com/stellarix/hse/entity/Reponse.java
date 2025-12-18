@@ -32,7 +32,6 @@ public class Reponse {
     private Integer reponseId;
 	
 	@ManyToOne(
-            cascade = CascadeType.PERSIST,
             fetch = FetchType.EAGER
     )
 	@JoinColumn(
@@ -43,7 +42,6 @@ public class Reponse {
 	
 	
 	@ManyToOne(
-            cascade = CascadeType.PERSIST,
             fetch = FetchType.EAGER
     )
 	@JoinColumn(
