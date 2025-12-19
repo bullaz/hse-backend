@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 import com.stellarix.hse.entity.Commentaire;
 
-public interface CommentaireRepository extends JpaRepository<Commentaire, Integer>{
+public interface CommentaireRepository extends JpaRepository<Commentaire, UUID>{
 	
 	@Query(value = "SELECT * FROM hse_schema.commentaire where toko5_id = :toko5Id", 
     nativeQuery = true)

@@ -53,6 +53,7 @@ import com.stellarix.hse.repository.Toko5Repository;
 import com.stellarix.hse.service.AccountService;
 import com.stellarix.hse.service.ErrorResponse;
 import com.stellarix.hse.service.JwtService;
+import com.stellarix.hse.service.MesureControleRequestDto;
 import com.stellarix.hse.service.ReponseDTO;
 import com.stellarix.hse.service.UpdateToko5Request;
 
@@ -355,7 +356,7 @@ public class HseApi {
 //		return saved;
 //	}
 	
-	//BE CAREFUL WITH THE LIST COMS/MESURE HANDLE THAT LATER: YOU GOT RETRIEVE THE LIST IN DATABASE BEFORE SAVING
+	//BE CAREFUL WITH THE LIST COMS/MESURE HANDLE THAT LATER: YOU GOT RETRIEVE THE LIST IN DATABASE BEFORE SAVING // actually no ... no reponse toko5 cascade in reponse
 	@PutMapping("/toko5s/toko5/{id}")
 	public Toko5 updateToko5(@PathVariable("id") String id,@RequestParam("withReponse") boolean withRep, @RequestBody UpdateToko5Request dto) throws Exception{
 		//Optional<Toko5> opt = toko5Repository.findById(UUID.fromString(id));
@@ -387,6 +388,57 @@ public class HseApi {
 		return saved;
 	}
 	
+	
+	@PostMapping("/toko5s/toko5/{id}/mesures_controle")
+	public MesureControle addMesureControle(@PathVariable("id") String id,@RequestBody MesureControleRequestDto mesureControleRequestDto) {
+		Optional<Toko5> opt = toko5Repository.findById(UUID.fromString(id));
+		if(opt.isEmpty()) {
+			 return null;
+		}
+		Question question = null;
+		Optional<Question> optionalQuestion = questionRepository.findByNom(mesureControleRequestDto.getQuestionNom());
+		question = optionalQuestion.get();
+		MesureControle tosave = new MesureControle(mesureControleRequestDto.getMesureControleId(), opt.get(), question, mesureControleRequestDto.getMesure(), false);
+//		MesureControle saved = mesureControleRepository.save(tosave);
+		Toko5 toko5 = opt.get();
+		toko5.getListMesureControle().add(tosave);
+		toko5Repository.save(toko5);
+		log.info(toko5.toString());
+		try {
+	        messagingTemplate.convertAndSend("/topic/toko5s/update", toko5);
+	        log.info("WebSocket notification sent successfully");
+        } catch (Exception e) {
+            log.error("Failed to send WebSocket message", e);
+        }
+		return null;
+	}
+	
+	@PreAuthorize("permitAll()")
+	@PutMapping("/toko5s/toko5/{toko5Id}/mesures_controle/{mesureId}")
+	public MesureControle updateMesureControle(@PathVariable("mesureId") String mesureId, @RequestBody MesureControleRequestDto mesureControleRequestDto) throws Exception{
+		Optional<MesureControle> opt = mesureControleRepository.findById(UUID.fromString(mesureId));
+		if(opt.isEmpty()) {
+			return null;
+		}
+		MesureControle mesure = opt.get();
+		mesure.setMesurePrise(mesureControleRequestDto.getMesure());
+		mesure.setImplemented(mesureControleRequestDto.getImplemented());
+		mesureControleRepository.save(mesure);
+		Optional<Toko5> opt5 = toko5Repository.findById(UUID.fromString(mesureId));
+		if(opt5.isEmpty()) {
+			 return null;
+		} 
+		Toko5 toko5 = opt5.get();
+		try {
+	        messagingTemplate.convertAndSend("/topic/toko5s/update", toko5);
+	        log.info("WebSocket notification sent successfully");
+       } catch (Exception e) {
+           log.error("Failed to send WebSocket message", e);
+       }
+		return mesureControleRepository.save(mesure);
+	}
+	
+	
 	@GetMapping("/toko5s/toko5/{id}/problems")
 	public List<Question> getListProblem(@PathVariable("id") String id) throws Exception{
 		return questionRepository.findToko5ListProblem(UUID.fromString(id));
@@ -404,14 +456,14 @@ public class HseApi {
 	}
 	
 	@DeleteMapping("/toko5s/commentaires/{id}")
-	public String deleteCommentaire(@PathVariable("id") int comId) throws Exception{
-		commentaireRepository.deleteById(comId);
+	public String deleteCommentaire(@PathVariable("id") String id) throws Exception{
+		commentaireRepository.deleteById(UUID.fromString(id));
 		return "Comment deleted successfully";
 	}
 	
 	@PutMapping("/toko5s/commentaires/{id}")
-	public String updateCommentaire(@PathVariable("id") int id, @RequestParam("commentaire") String commentaire) throws Exception{
-		Optional<Commentaire> opt = commentaireRepository.findById(id);
+	public String updateCommentaire(@PathVariable("id") String id, @RequestParam("commentaire") String commentaire) throws Exception{
+		Optional<Commentaire> opt = commentaireRepository.findById(UUID.fromString(id));
 		if(opt.isPresent()) {
 			Commentaire com = opt.get();
 			com.setCommentaire(commentaire);

@@ -92,3 +92,15 @@ export interface Toko5Json {
 toko5Json should be camelCase
 
 possible : no internet during the creating of toko5 .. the invalide (there is internet) (so update doesn't work.. should verify and use add or update)
+
+
+
+!!!!!!!!!!!!!!!!!!!!!!!
+→ Caused by: database is locked]
+in mobile.. VERIFY WHAT CAUSED THAT
+
+
+
+don't forget
+mesure controle component:
+WARN: currently we support only numbers in height prop

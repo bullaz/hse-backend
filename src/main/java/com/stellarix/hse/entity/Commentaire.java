@@ -1,5 +1,7 @@
 package com.stellarix.hse.entity;
 
+import java.util.UUID;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
@@ -30,9 +32,8 @@ import lombok.ToString;
 public class Commentaire {
 	
 	@Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "commentaire_id", updatable = false, nullable = false)
-    private Integer commentaireId;
+    private UUID commentaireId;
 	
 	@ManyToOne(
             fetch = FetchType.LAZY
