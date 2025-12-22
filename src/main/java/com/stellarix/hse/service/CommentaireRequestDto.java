@@ -12,5 +12,7 @@ import lombok.NoArgsConstructor;
 public class CommentaireRequestDto {
 	private UUID commentaireId;
 	private UUID toko5Id;
+	private String nom;
+	private String prenom;
 	private String commentaire;
 }

@@ -51,6 +51,7 @@ import com.stellarix.hse.repository.QuestionRepository;
 import com.stellarix.hse.repository.ReponseRepository;
 import com.stellarix.hse.repository.Toko5Repository;
 import com.stellarix.hse.service.AccountService;
+import com.stellarix.hse.service.CommentaireRequestDto;
 import com.stellarix.hse.service.ErrorResponse;
 import com.stellarix.hse.service.JwtService;
 import com.stellarix.hse.service.MesureControleRequestDto;
@@ -358,12 +359,17 @@ public class HseApi {
 	
 	//BE CAREFUL WITH THE LIST COMS/MESURE HANDLE THAT LATER: YOU GOT RETRIEVE THE LIST IN DATABASE BEFORE SAVING // actually no ... no reponse toko5 cascade in reponse
 	@PutMapping("/toko5s/toko5/{id}")
-	public Toko5 updateToko5(@PathVariable("id") String id,@RequestParam("withReponse") boolean withRep, @RequestBody UpdateToko5Request dto) throws Exception{
+	public Toko5 updateToko5(@PathVariable("id") String id,@RequestParam("withReponse") boolean withRep,@RequestParam("notify") boolean notify, @RequestBody UpdateToko5Request dto) throws Exception{
 		//Optional<Toko5> opt = toko5Repository.findById(UUID.fromString(id));
 		//if(opt.isEmpty()) return null;
 		log.info(dto.toString());
+		Optional<Toko5> opttk = toko5Repository.findById(dto.getToko5().getToko5Id());
+		if(opttk.isEmpty()) {
+			return null;
+		}
 		Toko5 updated = dto.getToko5();
-
+		updated.setListCommentaire(opttk.get().getListCommentaire());
+		updated.setListMesureControle(opttk.get().getListMesureControle());
 		if(withRep) {
 			
 			List<ReponseDTO> listReponseDTO = dto.getListReponseDTO();
@@ -378,15 +384,21 @@ public class HseApi {
 			}
 		}
 		Toko5 saved = toko5Repository.save(updated);
-		if(saved.getEtat().equalsIgnoreCase(listEtatToko5.get("invalide"))) {
-			try {
+		try {
+			log.info(listEtatToko5.get("invalide"));
+			if(saved.getEtat().equalsIgnoreCase(listEtatToko5.get("invalide"))) {
+				log.info("hereeeee");
 				messagingTemplate.convertAndSend("/topic/toko5s/invalid", saved);
-			} catch (Exception e) {
-				log.error("Failed to send WebSocket message", e);
+			}else if(notify){
+				log.info("TO NOTIFYYYYYYYYYYYYYYYYYYY");
+				messagingTemplate.convertAndSend("/topic/toko5s/update", saved);
 			}
+		} catch (Exception e) {
+			log.error("Failed to send WebSocket message", e);
 		}
 		return saved;
 	}
+	
 	
 	
 	@PostMapping("/toko5s/toko5/{id}/mesures_controle")
@@ -455,13 +467,33 @@ public class HseApi {
 		return mesureControleRepository.findByToko5Id(UUID.fromString(id));
 	}
 	
-	@DeleteMapping("/toko5s/commentaires/{id}")
+	@DeleteMapping("/toko5s/comments/{id}")
 	public String deleteCommentaire(@PathVariable("id") String id) throws Exception{
 		commentaireRepository.deleteById(UUID.fromString(id));
 		return "Comment deleted successfully";
 	}
 	
-	@PutMapping("/toko5s/commentaires/{id}")
+	@PostMapping("/toko5s/toko5/{id}/comments")
+	public Commentaire addComment(@PathVariable("id") String id, @RequestBody CommentaireRequestDto commentaireRequestDto) throws Exception{
+		Optional<Toko5> opt = toko5Repository.findById(UUID.fromString(id));
+		if(opt.isEmpty()) {
+			 return null;
+		}
+		Toko5 toko5 = opt.get();
+		Commentaire tosave = new Commentaire(commentaireRequestDto.getCommentaireId(),toko5,commentaireRequestDto.getNom(),commentaireRequestDto.getPrenom(),commentaireRequestDto.getCommentaire());
+		toko5.getListCommentaire().add(tosave);
+		toko5Repository.save(toko5);
+		//log.info(toko5.toString());
+		try {
+	        messagingTemplate.convertAndSend("/topic/toko5s/update", toko5);
+	        log.info("WebSocket notification sent successfully");
+        } catch (Exception e) {
+            log.error("Failed to send WebSocket message", e);
+        }
+		return tosave;
+	}
+	
+	@PutMapping("/toko5s/comments/{id}")
 	public String updateCommentaire(@PathVariable("id") String id, @RequestParam("commentaire") String commentaire) throws Exception{
 		Optional<Commentaire> opt = commentaireRepository.findById(UUID.fromString(id));
 		if(opt.isPresent()) {

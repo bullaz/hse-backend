@@ -53,24 +53,24 @@ public class Config {
 //        		log.info(test.toString());
 
         		
-        		Toko5 toko51 = new Toko5(UUID.randomUUID(),"Rakoto","Jean",LocalDateTime.now(),"valide", null, null, null);
-        		
-        		List<Commentaire> listComs = new ArrayList<Commentaire>();
-        		listComs.add(new Commentaire(UUID.randomUUID(),toko51,"Pierre","Jean","Commentaire 1 de Jean Pierre"));
-        		listComs.add(new Commentaire(UUID.randomUUID(),toko51,"Pierre","Jean","Commentaire 2 de Jean Pierre"));
-        		listComs.add(new Commentaire(UUID.randomUUID(),toko51,"Pierre","Jean","Commentaire 1 de Jean Pierre"));
-        		listComs.add(new Commentaire(UUID.randomUUID(),toko51,"Pierre","Jean","Commentaire 2 de Jean Pierre"));
-        		
-        		List<MesureControle> listControle  = new ArrayList<MesureControle>();
-        		listControle.add(new MesureControle(UUID.randomUUID(),toko51,listQuestion.get(1),"mesure prise 1",true));
-        		listControle.add(new MesureControle(UUID.randomUUID(),toko51,listQuestion.get(3),"mesure prise 2",true));
-        		listControle.add(new MesureControle(UUID.randomUUID(),toko51,listQuestion.get(1),"mesure prise 1",true));
-        		listControle.add(new MesureControle(UUID.randomUUID(),toko51,listQuestion.get(3),"mesure prise 2",true));
-        		
-        		toko51.setListCommentaire(listComs);
-        		toko51.setListMesureControle(listControle);
-        		
-        		toko51 = toko5Repository.save(toko51);
+//        		Toko5 toko51 = new Toko5(UUID.randomUUID(),"Rakoto","Jean",LocalDateTime.now(),"valide", null, null, null);
+//        		
+//        		List<Commentaire> listComs = new ArrayList<Commentaire>();
+//        		listComs.add(new Commentaire(UUID.randomUUID(),toko51,"Pierre","Jean","Commentaire 1 de Jean Pierre"));
+//        		listComs.add(new Commentaire(UUID.randomUUID(),toko51,"Pierre","Jean","Commentaire 2 de Jean Pierre"));
+//        		listComs.add(new Commentaire(UUID.randomUUID(),toko51,"Pierre","Jean","Commentaire 1 de Jean Pierre"));
+//        		listComs.add(new Commentaire(UUID.randomUUID(),toko51,"Pierre","Jean","Commentaire 2 de Jean Pierre"));
+//        		
+//        		List<MesureControle> listControle  = new ArrayList<MesureControle>();
+//        		listControle.add(new MesureControle(UUID.randomUUID(),toko51,listQuestion.get(1),"mesure prise 1",true));
+//        		listControle.add(new MesureControle(UUID.randomUUID(),toko51,listQuestion.get(3),"mesure prise 2",true));
+//        		listControle.add(new MesureControle(UUID.randomUUID(),toko51,listQuestion.get(1),"mesure prise 1",true));
+//        		listControle.add(new MesureControle(UUID.randomUUID(),toko51,listQuestion.get(3),"mesure prise 2",true));
+//        		
+//        		toko51.setListCommentaire(listComs);
+//        		toko51.setListMesureControle(listControle);
+//        		
+//        		toko51 = toko5Repository.save(toko51);
         		
         		//List<Toko5> list = toko5Repository.findAll();
         		

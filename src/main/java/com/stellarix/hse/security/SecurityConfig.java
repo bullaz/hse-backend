@@ -51,7 +51,7 @@ public class SecurityConfig /*extends WebSecurityConfigurerAdapter */{
         	.csrf(csrf -> csrf.disable())
 
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/hse/test" , "/hse/signin", "/hse/signup", "/hse/refresh_token", "/hse/test", "/hse/logout", "/hse/verify_token", "/hse/toko5s/toko5/{id}","/hse/ws/**", "/ws/**").permitAll()
+                .requestMatchers("/hse/test" , "/hse/signin", "/hse/signup", "/hse/refresh_token", "/hse/test", "/hse/logout", "/hse/verify_token", "/hse/toko5s/toko5/{id}","/hse/ws/**", "/hse/toko5s/toko5/{id}/comments/**").permitAll()
                 
                 .requestMatchers(HttpMethod.POST, "/hse/toko5s").permitAll()
                 
