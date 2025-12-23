@@ -104,3 +104,8 @@ in mobile.. VERIFY WHAT CAUSED THAT
 don't forget
 mesure controle component:
 WARN: currently we support only numbers in height prop
+
+
+don't forget alert for errors;
+
+don't forget to throw exceptions and handle them properly

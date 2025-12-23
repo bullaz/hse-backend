@@ -1,6 +1,7 @@
 package com.stellarix.hse.controller;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -304,7 +305,12 @@ public class HseApi {
 	@GetMapping("/toko5s")
 	public List<Toko5> getListToko5ByDate(@RequestParam("date") String date) throws Exception{
 		//add string format verification;
-		return toko5Repository.findByDate(date);	
+		List<Toko5> list = toko5Repository.findByDate(date);
+		for(Toko5 toko5 : list) {
+			List<Question> problems = questionRepository.findToko5ListProblem(toko5.getToko5Id());
+			toko5.setListProblem(problems);
+		}
+		return list;	
 	}
 	
 	
@@ -370,20 +376,28 @@ public class HseApi {
 		Toko5 updated = dto.getToko5();
 		updated.setListCommentaire(opttk.get().getListCommentaire());
 		updated.setListMesureControle(opttk.get().getListMesureControle());
-		if(withRep) {
-			
+		Toko5 saved = toko5Repository.save(updated);
+		
+		if(withRep) {	
 			List<ReponseDTO> listReponseDTO = dto.getListReponseDTO();
 			
 			for(ReponseDTO reponseDTO : listReponseDTO) {
 				Optional<Question> optQuestion = questionRepository.findByNom(reponseDTO.getNomQuestion());
 				if(optQuestion.isPresent()) {
 					Question question = optQuestion.get();
-					Reponse rep = new Reponse(null, updated,question,reponseDTO.getValeur());
-					reponseRepository.save(rep);
+					
+					Optional<Reponse> optr = reponseRepository.findByToko5AndQuestion(updated, question);
+					if(optr.isEmpty()) {
+						Reponse rep = new Reponse(null, updated,question,reponseDTO.getValeur());
+						reponseRepository.save(rep);
+					}else {
+						Reponse rep = optr.get();
+						rep.setValeur(reponseDTO.getValeur());
+						reponseRepository.save(rep);
+					}
 				}
 			}
 		}
-		Toko5 saved = toko5Repository.save(updated);
 		try {
 			log.info(listEtatToko5.get("invalide"));
 			if(saved.getEtat().equalsIgnoreCase(listEtatToko5.get("invalide"))) {
@@ -397,6 +411,26 @@ public class HseApi {
 			log.error("Failed to send WebSocket message", e);
 		}
 		return saved;
+	}
+	
+	@PutMapping("/toko5s/toko5/{id}/resolve")
+	public Toko5 resolve(@PathVariable("id") String id) {
+		Optional<Toko5> opt = toko5Repository.findById(UUID.fromString(id));
+		if(opt.isPresent()) {
+			Toko5 toko5 = opt.get();
+			toko5.setEtat(listEtatToko5.get("encours"));
+			toko5Repository.save(toko5);
+			reponseRepository.resolve(UUID.fromString(id));
+			toko5.setListProblem(new ArrayList<Question>());
+			try {
+		        messagingTemplate.convertAndSend("/topic/toko5s/update", toko5);
+		        log.info("WebSocket notification sent successfully");
+	        } catch (Exception e) {
+	            log.error("Failed to send WebSocket message", e);
+	        }
+			return toko5;
+		}
+		return null;
 	}
 	
 	
