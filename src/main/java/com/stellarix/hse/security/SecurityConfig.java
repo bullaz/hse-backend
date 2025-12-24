@@ -57,6 +57,8 @@ public class SecurityConfig /*extends WebSecurityConfigurerAdapter */{
                 
                 .requestMatchers(HttpMethod.PUT, "/hse/toko5s/toko5/{id}/resolve").permitAll()
                 
+                .requestMatchers(HttpMethod.GET, "/hse/toko5s/refresh_state").permitAll()
+                
                 .requestMatchers("/hse/toko5s/toko5/{id}/mesures_controle/**").permitAll()
                 
                 .requestMatchers("/hse/**").hasAuthority("HSE")

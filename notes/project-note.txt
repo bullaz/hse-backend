@@ -109,3 +109,12 @@ WARN: currently we support only numbers in height prop
 don't forget alert for errors;
 
 don't forget to throw exceptions and handle them properly
+
+
+
+*******************if i login and invalidate toko 5 fast the server only get the create toko 5 not the second call (add list reponse, etat invalide)
+important************** .. maybe it is because while spring boot process the create toko5, the add list reponse is already processed also so... maybe wait for the first to finish before the second (axios instance)
+
+
+
+don't forget to handle permission better scanqr code (use dialog)

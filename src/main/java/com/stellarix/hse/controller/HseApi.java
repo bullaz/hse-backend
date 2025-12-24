@@ -38,6 +38,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.fasterxml.jackson.core.exc.StreamWriteException;
 import com.fasterxml.jackson.databind.DatabindException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.stellarix.hse.dto.Toko5StateDto;
 import com.stellarix.hse.entity.AuthRequest;
 import com.stellarix.hse.entity.Commentaire;
 import com.stellarix.hse.entity.Hse;
@@ -313,6 +314,17 @@ public class HseApi {
 		return list;	
 	}
 	
+	@GetMapping("/toko5s/refresh_state")
+	public List<Toko5StateDto> getToko5sNewState(@RequestParam("ids") List<UUID> listIds) throws Exception{
+		List<Toko5StateDto> list = new ArrayList<Toko5StateDto>();
+		for(UUID id: listIds) {
+			Optional<Toko5> opt = toko5Repository.findById(id);
+			if(opt.isPresent()) {
+				list.add(new Toko5StateDto(opt.get().getToko5Id(),opt.get().getEtat()));
+			}
+		}
+		return list;
+	}
 	
 	@PreAuthorize("permitAll()")
 	@PostMapping("/toko5s")
