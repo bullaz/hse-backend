@@ -118,3 +118,35 @@ important************** .. maybe it is because while spring boot process the cre
 
 
 don't forget to handle permission better scanqr code (use dialog)
+
+
+
+
+
+
+
+comments by superiors: 
+
+intervenant 
+
+identification:
+num phone
+mail
+
+tache
+
+ajouter nom, description etape(with that lamp icon)
+
+ajout poste superviseur
+
+risk acceptance: (notification vers hse)
+-attenuer
+-accepter (responsabilite)
+-resolu
+
+interface statistique
+-
+
+preuves ---- toko5
+
+basse de donnees: backup
