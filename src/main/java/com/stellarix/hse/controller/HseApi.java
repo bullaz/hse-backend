@@ -45,12 +45,14 @@ import com.stellarix.hse.entity.Hse;
 import com.stellarix.hse.entity.MesureControle;
 import com.stellarix.hse.entity.Question;
 import com.stellarix.hse.entity.Reponse;
+import com.stellarix.hse.entity.Societe;
 import com.stellarix.hse.entity.Toko5;
 import com.stellarix.hse.repository.CommentaireRepository;
 import com.stellarix.hse.repository.HseRepository;
 import com.stellarix.hse.repository.MesureControleRepository;
 import com.stellarix.hse.repository.QuestionRepository;
 import com.stellarix.hse.repository.ReponseRepository;
+import com.stellarix.hse.repository.SocieteRepository;
 import com.stellarix.hse.repository.Toko5Repository;
 import com.stellarix.hse.service.AccountService;
 import com.stellarix.hse.service.CommentaireRequestDto;
@@ -97,6 +99,8 @@ public class HseApi {
     
     private ReponseRepository reponseRepository;
     
+    private SocieteRepository societeRepository;
+    
     private SimpMessagingTemplate messagingTemplate;
     
     public final static Map<String, String> listEtatToko5 = Map.of(
@@ -108,7 +112,8 @@ public class HseApi {
     @Autowired
     public HseApi(AccountService service, JwtService jwtService, AuthenticationManager authenticationManager, HseRepository hseRepository, 
     		UserDetailsService userDetailsService, Toko5Repository toko5Repository, QuestionRepository questionRepository,
-    		CommentaireRepository commentaireRepository, MesureControleRepository mesureControleRepository, SimpMessagingTemplate messagingTemplate, ReponseRepository reponseRepository) {
+    		CommentaireRepository commentaireRepository, MesureControleRepository mesureControleRepository, SimpMessagingTemplate messagingTemplate, ReponseRepository reponseRepository,
+    		SocieteRepository societeRepository) {
     	this.service = service;
     	this.jwtService = jwtService;
     	this.authenticationManager = authenticationManager;
@@ -120,6 +125,7 @@ public class HseApi {
     	this.mesureControleRepository = mesureControleRepository;
     	this.messagingTemplate = messagingTemplate;
     	this.reponseRepository = reponseRepository;
+    	this.societeRepository = societeRepository;
     }
     
     
@@ -550,5 +556,25 @@ public class HseApi {
 		}
 		return "that toko5 comment doesn't exist";
 	}
+	
+	
+//	@GetMapping("/toko5s/societes")
+//	public List<Societe> getListSociete() throws Exception{
+//		return societeRepository.findAll();
+//	}
+//	
+//	@PutMapping("/toko5s/societes/{id}")
+//	public Societe updateSociete(@RequestBody Societe toUpdate) throws Exception{
+//		return societeRepository.save(toUpdate);
+//	}
+//	
+//	@PostMapping("/toko5s/societes")
+//	public Societe addSociete(@RequestBody Societe toAdd) throws Exception{
+//		return societeRepository.save(toAdd);
+//	}
+	
+	
+	
+	
 }
 	

@@ -101,6 +101,15 @@ in mobile.. VERIFY WHAT CAUSED THAT
 
 
 
+
+Deprecated feature used
+Unload event listeners are deprecated and will be removed.
+
+1 source
+sockjs-client.js?v=c8f69ccd:66
+
+
+
 don't forget
 mesure controle component:
 WARN: currently we support only numbers in height prop
@@ -125,7 +134,7 @@ don't forget to handle permission better scanqr code (use dialog)
 
 
 
-comments by superiors: 
+remarques: 
 
 intervenant 
 
@@ -150,3 +159,39 @@ interface statistique
 preuves ---- toko5
 
 basse de donnees: backup
+
+
+
+
+change url toko5s/toko5 to toko5s/
+
+
+
+
+
+
+
+
+
+tasks today:  
+front:
+-crud societe
+-crud task + list required questions with it
+(update logic with it: check validity, check required questions)
+-show list problem(front)
+-create a template stats interface / with mock list stats
+
+add admin interface for adding:
+-crud supervisor with mail verification
+-crud hse with mail verification
+
+
+mobile:
+-login: add task
+-dropdown societe
+-add num phone, email
+-second chance toko 5
+-description chaque etape en dessus list pictograms (with that lamp icon)
+-try add name picto below each checkbox and see if it looks good
+-login supervisor: add poste
+-add language/ choose language at the home component en dessous

@@ -30,7 +30,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @Slf4j
-@Configuration @EnableWebSecurity @EnableMethodSecurity @RequiredArgsConstructor
+@Configuration @EnableWebSecurity @EnableMethodSecurity(prePostEnabled = true) @RequiredArgsConstructor
 public class SecurityConfig /*extends WebSecurityConfigurerAdapter */{
 	
 	@Lazy
@@ -51,7 +51,7 @@ public class SecurityConfig /*extends WebSecurityConfigurerAdapter */{
         	.csrf(csrf -> csrf.disable())
 
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/hse/test" , "/hse/signin", "/hse/signup", "/hse/refresh_token", "/hse/test", "/hse/logout", "/hse/verify_token", "/hse/toko5s/toko5/{id}","/hse/ws/**", "/hse/toko5s/toko5/{id}/comments/**").permitAll()
+                .requestMatchers("/hse/test" , "/hse/signin", "/hse/signup", "/hse/refresh_token", "/hse/test", "/hse/logout", "/hse/verify_token", "/hse/toko5s/toko5/{id}","/hse/ws/**", "/hse/toko5s/toko5/{id}/comments/**", "/hse/societes/**").permitAll()
                 
                 .requestMatchers(HttpMethod.POST, "/hse/toko5s").permitAll()
                 
