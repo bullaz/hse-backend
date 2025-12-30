@@ -38,6 +38,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.fasterxml.jackson.core.exc.StreamWriteException;
 import com.fasterxml.jackson.databind.DatabindException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.stellarix.hse.dto.TaskDto;
 import com.stellarix.hse.dto.Toko5StateDto;
 import com.stellarix.hse.entity.AuthRequest;
 import com.stellarix.hse.entity.Commentaire;
@@ -46,6 +47,7 @@ import com.stellarix.hse.entity.MesureControle;
 import com.stellarix.hse.entity.Question;
 import com.stellarix.hse.entity.Reponse;
 import com.stellarix.hse.entity.Societe;
+import com.stellarix.hse.entity.Task;
 import com.stellarix.hse.entity.Toko5;
 import com.stellarix.hse.repository.CommentaireRepository;
 import com.stellarix.hse.repository.HseRepository;
@@ -53,6 +55,7 @@ import com.stellarix.hse.repository.MesureControleRepository;
 import com.stellarix.hse.repository.QuestionRepository;
 import com.stellarix.hse.repository.ReponseRepository;
 import com.stellarix.hse.repository.SocieteRepository;
+import com.stellarix.hse.repository.TaskRepository;
 import com.stellarix.hse.repository.Toko5Repository;
 import com.stellarix.hse.service.AccountService;
 import com.stellarix.hse.service.CommentaireRequestDto;
@@ -101,6 +104,8 @@ public class HseApi {
     
     private SocieteRepository societeRepository;
     
+    private TaskRepository taskRepository;
+    
     private SimpMessagingTemplate messagingTemplate;
     
     public final static Map<String, String> listEtatToko5 = Map.of(
@@ -113,7 +118,7 @@ public class HseApi {
     public HseApi(AccountService service, JwtService jwtService, AuthenticationManager authenticationManager, HseRepository hseRepository, 
     		UserDetailsService userDetailsService, Toko5Repository toko5Repository, QuestionRepository questionRepository,
     		CommentaireRepository commentaireRepository, MesureControleRepository mesureControleRepository, SimpMessagingTemplate messagingTemplate, ReponseRepository reponseRepository,
-    		SocieteRepository societeRepository) {
+    		SocieteRepository societeRepository, TaskRepository taskRepository) {
     	this.service = service;
     	this.jwtService = jwtService;
     	this.authenticationManager = authenticationManager;
@@ -126,6 +131,7 @@ public class HseApi {
     	this.messagingTemplate = messagingTemplate;
     	this.reponseRepository = reponseRepository;
     	this.societeRepository = societeRepository;
+    	this.taskRepository = taskRepository;
     }
     
     
@@ -574,6 +580,53 @@ public class HseApi {
 //	}
 	
 	
+	@GetMapping("/toko5s/tasks")
+	public List<Task> getAllTasks(){
+		return taskRepository.findAll();
+	}
+	
+	@PostMapping("/toko5s/tasks")
+	public Task newTask(@RequestBody TaskDto dto) throws Exception{
+		Task toAdd = new Task();
+		toAdd.setNom(dto.getNom());
+		List<Question> listQuestion = new ArrayList<Question>();
+		for(Integer questionId: dto.getListQuestionId()) {
+			Optional<Question> opt = questionRepository.findById(questionId);
+			if(opt.isPresent()) {
+				listQuestion.add(opt.get());
+			}
+		}
+		toAdd.setListQuestion(listQuestion);
+		return taskRepository.save(toAdd);
+	}	
+	
+	
+	@PutMapping("/toko5s/tasks/{id}")
+	public Task editTask(@RequestBody TaskDto dto) throws Exception{
+		Optional<Task> optTask = taskRepository.findById(dto.getTaskId());
+		if(optTask.isPresent()) {
+			Task toUpdate = optTask.get();
+			toUpdate.setNom(dto.getNom());
+			toUpdate.setNom(dto.getNom());
+			List<Question> listQuestion = new ArrayList<Question>();
+			for(Integer questionId: dto.getListQuestionId()) {
+				Optional<Question> opt = questionRepository.findById(questionId);
+				if(opt.isPresent()) {
+					listQuestion.add(opt.get());
+				}
+			}
+			toUpdate.setListQuestion(listQuestion);
+			return taskRepository.save(toUpdate);
+		}
+		return null;
+	}
+	
+	
+	@DeleteMapping("/toko5s/tasks/{id}")
+	public void deleteTask(@PathVariable("id") Integer taskId) throws Exception{
+		taskRepository.deleteById(taskId);
+		return;
+	}
 	
 	
 }

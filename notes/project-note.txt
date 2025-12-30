@@ -172,7 +172,6 @@ change url toko5s/toko5 to toko5s/
 
 
 
-
 tasks today:  
 front:
 -crud societe
@@ -195,3 +194,8 @@ mobile:
 -try add name picto below each checkbox and see if it looks good
 -login supervisor: add poste
 -add language/ choose language at the home component en dessous
+
+
+
+
+éÉâÂèÈ
