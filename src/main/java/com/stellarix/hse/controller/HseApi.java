@@ -629,5 +629,11 @@ public class HseApi {
 	}
 	
 	
+	@GetMapping("/toko5s/questions")
+	public List<Question> getListQuestion() throws Exception{
+		return questionRepository.findAll();
+	}
+	
+	
 }
 	
