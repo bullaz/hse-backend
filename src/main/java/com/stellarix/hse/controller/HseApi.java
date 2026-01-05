@@ -585,6 +585,17 @@ public class HseApi {
 		return taskRepository.findAll();
 	}
 	
+	
+	@GetMapping("/toko5s/questions_with_picto")
+	public List<Question> getListQuestionWithPicto() throws Exception{
+		return questionRepository.findByCategorieNot("safety");
+	}
+
+	@GetMapping("/toko5s/questions")
+	public List<Question> getListQuestion() throws Exception{
+		return questionRepository.findAll();
+	}
+	
 	@PostMapping("/toko5s/tasks")
 	public Task newTask(@RequestBody TaskDto dto) throws Exception{
 		Task toAdd = new Task();
@@ -627,13 +638,6 @@ public class HseApi {
 		taskRepository.deleteById(taskId);
 		return;
 	}
-	
-	
-	@GetMapping("/toko5s/questions")
-	public List<Question> getListQuestion() throws Exception{
-		return questionRepository.findAll();
-	}
-	
 	
 }
 	

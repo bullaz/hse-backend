@@ -198,4 +198,8 @@ mobile:
 
 
 
+task crud: 
+-don't forget to configure for dark mode
+
+
 éÉâÂèÈ

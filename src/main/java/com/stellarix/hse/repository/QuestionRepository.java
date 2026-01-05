@@ -26,4 +26,6 @@ public interface QuestionRepository extends JpaRepository<Question, Integer>{
 	List<Question> findByCategorieAndRequired(String categorie,  Boolean required);
 	
 	Optional<Question> findByNom(String nom);
+	
+	List<Question> findByCategorieNot(String categorie);
 }

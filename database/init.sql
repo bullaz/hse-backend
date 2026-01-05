@@ -1,6 +1,6 @@
 
 INSERT INTO hse_schema.question (nom, pictogramme, categorie, required) VALUES 
-    ('alcool','alcohol', 'think', true),
+    ('alcool','alcool', 'think', true),
     ('competence', 'competency', 'think', true),
     ('formation', 'formation', 'think', true),
     ('materiel', 'materiel', 'think', true),
@@ -13,11 +13,11 @@ INSERT INTO hse_schema.question (nom, pictogramme, categorie, required) VALUES
     ('attention eboulement', 'falling-rock', 'organise', false),
     ('pelle', 'pelle', 'organise', false),
     ('attention feu', 'fire_warning', 'organise', false),
-    ('test1', 'organise22', 'organise', false),
-    ('test5', 'organise23', 'organise', false),
-    ('test2', 'organise24', 'organise', false),
-    ('test3', 'organise211', 'organise', false),
-    ('test4', 'organiselast', 'organise', false),
+    ('test1', 'organise22', 'organise22', false),
+    ('test5', 'organise23', 'organise23', false),
+    ('test2', 'organise24', 'organise24', false),
+    ('test3', 'organise211', 'organise211', false),
+    ('test4', 'organiselast', 'organiselast', false),
 
 
 
