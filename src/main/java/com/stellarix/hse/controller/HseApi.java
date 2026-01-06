@@ -342,15 +342,32 @@ public class HseApi {
 	@PostMapping("/toko5s")
 	public Toko5 newToko5(@RequestBody Toko5 toko5) throws Exception{
 		log.info(toko5.toString());
-		Toko5 savedToko5 = toko5Repository.save(toko5);
-		
-		try {
-	        messagingTemplate.convertAndSend("/topic/toko5s/new", savedToko5);
-	        log.info("WebSocket notification sent successfully");
-        } catch (Exception e) {
-            log.error("Failed to send WebSocket message", e);
-        }
-		return savedToko5;
+		Task task = null;
+		Societe societe = null;
+		Optional<Task> optTask = taskRepository.findByNom(toko5.getTask().getNom());
+		if(optTask.isPresent()) {
+			task = optTask.get();
+			log.info(task.toString());
+		}
+		Optional<Societe> optSociete = societeRepository.findByNom(toko5.getSociete().getNom());
+		if(optSociete.isPresent()) {
+			societe = optSociete.get();
+			log.info(societe.toString());
+		}
+		if(task != null && societe != null) {
+			toko5.setSociete(societe);
+			toko5.setTask(task);
+			Toko5 savedToko5 = toko5Repository.save(toko5);
+			try {
+		        messagingTemplate.convertAndSend("/topic/toko5s/new", savedToko5);
+		        log.info("WebSocket notification sent successfully");
+	        } catch (Exception e) {
+	            log.error("Failed to send WebSocket message", e);
+	        }
+			return savedToko5;
+		}else {
+			throw new Exception("task or societe null");
+		}
 	}
 	
 //	@PreAuthorize("permitAll()")
