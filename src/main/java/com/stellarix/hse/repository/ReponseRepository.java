@@ -19,10 +19,12 @@ public interface ReponseRepository extends JpaRepository<Reponse, Integer>{
 	
 	@Modifying
 	@Transactional
-	@Query("DELETE FROM Reponse r " +
-		       "WHERE r.toko5.toko5Id = :toko5Id " +
+	@Query(value = "DELETE FROM hse_schema.reponse r " +
+		       "WHERE r.toko5_id = :toko5Id " +
 		       "AND r.valeur = false " +
-		       "AND r.question.required = true")
+		       "AND r.question_id IN ( " +
+		       "SELECT tq.question_id FROM hse_schema.task_question tq " +
+		       "WHERE tq.task_id = (SELECT task_id FROM hse_schema.toko5 WHERE toko5_id = :toko5Id)" +
+		       ")", nativeQuery = true)
 	void resolve(@Param("toko5Id") UUID toko5Id);
-	
 }

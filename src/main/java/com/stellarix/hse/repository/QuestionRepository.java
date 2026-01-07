@@ -19,7 +19,7 @@ public interface QuestionRepository extends JpaRepository<Question, Integer>{
             "JOIN hse_schema.reponse r ON r.question_id = q.question_id " +
             "WHERE r.valeur = false " +
             "AND r.toko5_id = :toko5Id " +
-            "AND q.required = true", 
+            "AND q.question_id in (select question_id from hse_schema.task_question tq where tq.task_id = (select task_id from hse_schema.toko5 where toko5_id = :toko5Id))", 
     nativeQuery = true)
 	List<Question> findToko5ListProblem(@Param("toko5Id") UUID toko5Id);
 	

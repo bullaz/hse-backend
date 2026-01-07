@@ -415,6 +415,16 @@ public class HseApi {
 			return null;
 		}
 		Toko5 updated = dto.getToko5();
+		Optional<Societe> opts = societeRepository.findByNom(updated.getSociete().getNom());
+		if(opts.isEmpty()) {
+			throw new Exception("No such societe");
+		}
+		Optional<Task> optt = taskRepository.findByNom(updated.getTask().getNom());
+		if(optt.isEmpty()) {
+			throw new Exception("No such task");
+		}
+		updated.setSociete(opts.get());
+		updated.setTask(optt.get());
 		updated.setListCommentaire(opttk.get().getListCommentaire());
 		updated.setListMesureControle(opttk.get().getListMesureControle());
 		Toko5 saved = toko5Repository.save(updated);
