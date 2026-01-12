@@ -203,3 +203,6 @@ task crud:
 
 
 éÉâÂèÈ
+
+
+behavior of avatar with collapse sidebar(front)
