@@ -202,4 +202,29 @@ task crud:
 -don't forget to configure for dark mode
 
 
+...:
+before executing any task/work, after all types of process workers need to complete, workers also need to complete a paper called toko5.. It is a paper by workers to self verify the safety before executing any task : safety for himself and his surroundings. If there are problems the worker is not allowed to start his task for his safety and the surrounding safety and the company safety..  Here are the pics of the toko5.. 
+It is a list of checkboxes the worker should complete(for his current state, his materials, epi, ...) and a list of checkboxes for potential risk and hazards he encounters at his place of work.. and for all risk he check he gotta write control measure for it and say if it is implemented or not.
+basically that.. The worker can review and change his toko5 at any time
+My task was to digitize that paper.
+When the worker chose his task in the toko5 mobile (each task have the list of imperative checkboxes the worker shoudl check to validate his toko5.. If not the toko5 is invalid (meaning there are problems) (those checkboxes are the necessary checkboxes for that specific taks))
+It includes :
+
+1- a mobile interface for the workers to complete their toko5s.
+
+2- a mobile interface for supervisor for this scenario: - if any toko5 is invalid, the worker must go to his supervisor the supervisor by his interface can scan to toko5 to see all imformations about it.. He can comment it at anytime to say things about the worker's work, or anything,.. and can revalidate the toko5 so the worker can continue his toko5 if the problem is resolve(for example the worker didn't check the glove epi which is necessary so he goes to the supervisor, the supervisor gives him gloves and then revalidate the toko5)
+
+3-web interface for the responsible at the company (pas sur terrain) where: - they can see in real time the state of toko5s of workers (was is valid, was there problems(what was the problem)) (and get notified right away if some worker have invalid toko5 (have some problems)) (basically everything of the toko5s (comments by supervisor,..)), -they can also see stats about toko5s(
+percentage of worker with problems(per week/ per month)
+top most encountered problems (week, month)
+)
+
+I do the project solo doing the fullstack work(database, backend, frontend, mobile) alone
+
+here are screenshot of the project: 
+
+The project is almost finished but I want you to tell me how long do you give an intern (cs master 2 intern)(that project as a part of a final year project) to finish that project (how many weeks are month)
+
+
+
 éÉâÂèÈ
