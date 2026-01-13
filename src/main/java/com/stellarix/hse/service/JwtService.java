@@ -24,8 +24,10 @@ public class JwtService {
 	@Value("${jwt.secret}")
     private String SECRET;
 
-    public Map<String,String> generateToken(String email) { // Use email as username
+    public Map<String,String> generateToken(String email, String nom, String prenom) { // Use email as username
         Map<String, Object> claims = new HashMap<>();
+        claims.put("nom",nom);
+        claims.put("prenom", prenom);
         Map<String, String> tokens = new HashMap<>();
       //return createToken(claims, email);
         tokens.put("access_token", createToken(claims, email));
