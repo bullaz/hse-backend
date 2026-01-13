@@ -152,7 +152,7 @@ public class HseApi {
         	Optional<Hse> account = hseRepository.findByUsernameOrEmail(authRequest.getUsername(), authRequest.getUsername());
             Hse user = account.get();
           //return jwtService.generateToken(user.getEmail());
-            Map<String, String> tokens =  jwtService.generateToken(user.getEmail());
+            Map<String, String> tokens =  jwtService.generateToken(user.getEmail(),user.getNom(),user.getPrenom());
             String refreshToken = tokens.get("refresh_token");
             tokens.remove("refresh_token");
             

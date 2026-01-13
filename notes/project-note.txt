@@ -131,6 +131,26 @@ don't forget to handle permission better scanqr code (use dialog)
 
 
 
+**************************************************************
+login dropdowns 
+
+I just took off the value prop and it works
+Good solution! Removing the value prop is actually a valid workaround for this library. Here's why it works:
+
+Why Removing value Works:
+The dropdown manages its own internal state when you don't explicitly control it with a value prop
+
+No more object reference comparison issues - the library handles selection internally
+
+Your onChange handler still works to update your formData state
+
+Potential Downsides to Consider:
+Two-way binding is lost - if you programmatically change formData.societe, the dropdown won't reflect it
+
+No initial/default value - you can't preset the dropdown selection
+
+If you reset the form, the dropdown won't clear automatically
+******************************************************************
 
 
 
@@ -206,3 +226,76 @@ task crud:
 
 
 behavior of avatar with collapse sidebar(front)
+
+
+take 5 est la aussi pour donner la responsabilite a l'intervenant (en cas d'accident)
+
+
+
+
+
+
+slide: 
+
+introduction: 
+  - Le take 5 est un outil utilisé pour identifier les risques et dangers potentiels et pour guarantir la sécurité avant de commencer à travailler sur un site.
+  (...)
+
+
+analyse de l'existant: 
+  (sur papier : 
+    -difficile a gerer (...)
+    -(...)
+  )
+  
+  solution: -digitalisation (..)
+
+
+presentation de l'app: 
+
+- 3 interfaces :  
+  -  interface HSE 
+    - voir l'etat de chaque take 5 en temps reel (avec les commentaires des superviseur, les mesures de controles) .. avantage: prise de decision rapide
+    - statistiques
+    -gestion de l'application take 5 : 
+      - gestion des taches : chaque tache a realiser a une liste d' EPI(materiels), etat (formation (oui ou non), ..)) obligatoires pour pouvoir travailler en toute securite ..
+    -gestion de la liste des societes 
+
+
+  -interface intervenant (mobile) (celui qui va realiser la tache)
+    - initier son take 5
+    (**pour chaque risque, une mesure de controle doit etre prise)
+
+
+  -interface superviseur (mobile)
+    -scanner le take 5 d'un intervenant pour pouvoir :
+      - ajouter des commentaires par rapport a l'intervenant, le site,...
+      - revalider un take 5 
+
+
+
+scenarios: 
+ - un intervenant va commencer une tache; utilise l'application pour completer son take 5:
+  -cas 1 : (le take 5 est valide) -> l'intervenant peut donc commencer son travail
+  -cas 2 : (le take 5 est invalide) -> l'intervenant ne peut pas continuer son take 5, HSE notifiee, l'intervanant doit aller voir son superviseur; 
+      le superviseur scanne le take 5 en question (via son interface), voit les problemes qui font que le take 5 est invalide (exemple : des epi absents, ...) 
+        Dans le cas ou le probleme peut etre resolu, le superviseur peut revalider le take 5 pour que l'intervenant puisse le finir .
+
+  A tout moment, l'intervenant peut modifer son take 5, ajouter de nouveux risques identifies avec les mesures de controles adequats
+  
+
+conclusion: - ...
+
+christelle.famantanantsoa
+
+
+
+
+
+anderson.mahosinantenaina@stellar-ix.com
+
+F1rstPssWrD.STX2025
+
+motdepassestx2002--
+
+motdepassestx2002--
