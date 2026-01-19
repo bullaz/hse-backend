@@ -39,6 +39,8 @@ public class Question {
 	@Column(nullable = false)
 	private Boolean required = false;
 	
+	private String vonjymaika;
+	
 //	@Column(nullable = false)
 //	private Boolean is_risk_question = false;
 
