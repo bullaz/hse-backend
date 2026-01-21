@@ -1,12 +1,15 @@
 package com.stellarix.hse.controller;
 import java.io.IOException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +41,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.fasterxml.jackson.core.exc.StreamWriteException;
 import com.fasterxml.jackson.databind.DatabindException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.stellarix.hse.dto.TaskDetailDto;
 import com.stellarix.hse.dto.TaskDto;
 import com.stellarix.hse.dto.Toko5StateDto;
 import com.stellarix.hse.entity.AuthRequest;
@@ -48,6 +52,7 @@ import com.stellarix.hse.entity.Question;
 import com.stellarix.hse.entity.Reponse;
 import com.stellarix.hse.entity.Societe;
 import com.stellarix.hse.entity.Task;
+import com.stellarix.hse.entity.TaskDetail;
 import com.stellarix.hse.entity.Toko5;
 import com.stellarix.hse.repository.CommentaireRepository;
 import com.stellarix.hse.repository.HseRepository;
@@ -55,6 +60,7 @@ import com.stellarix.hse.repository.MesureControleRepository;
 import com.stellarix.hse.repository.QuestionRepository;
 import com.stellarix.hse.repository.ReponseRepository;
 import com.stellarix.hse.repository.SocieteRepository;
+import com.stellarix.hse.repository.TaskDetailRepository;
 import com.stellarix.hse.repository.TaskRepository;
 import com.stellarix.hse.repository.Toko5Repository;
 import com.stellarix.hse.service.AccountService;
@@ -106,7 +112,10 @@ public class HseApi {
     
     private TaskRepository taskRepository;
     
+    private TaskDetailRepository taskDetailRepository;
+    
     private SimpMessagingTemplate messagingTemplate;
+    
     
     public final static Map<String, String> listEtatToko5 = Map.of(
     		"valide", "valide",
@@ -118,7 +127,7 @@ public class HseApi {
     public HseApi(AccountService service, JwtService jwtService, AuthenticationManager authenticationManager, HseRepository hseRepository, 
     		UserDetailsService userDetailsService, Toko5Repository toko5Repository, QuestionRepository questionRepository,
     		CommentaireRepository commentaireRepository, MesureControleRepository mesureControleRepository, SimpMessagingTemplate messagingTemplate, ReponseRepository reponseRepository,
-    		SocieteRepository societeRepository, TaskRepository taskRepository) {
+    		SocieteRepository societeRepository, TaskRepository taskRepository, TaskDetailRepository taskDetailRepository) {
     	this.service = service;
     	this.jwtService = jwtService;
     	this.authenticationManager = authenticationManager;
@@ -132,6 +141,7 @@ public class HseApi {
     	this.reponseRepository = reponseRepository;
     	this.societeRepository = societeRepository;
     	this.taskRepository = taskRepository;
+    	this.taskDetailRepository = taskDetailRepository;
     }
     
     
@@ -407,8 +417,6 @@ public class HseApi {
 	//BE CAREFUL WITH THE LIST COMS/MESURE HANDLE THAT LATER: YOU GOT RETRIEVE THE LIST IN DATABASE BEFORE SAVING // actually no ... no reponse toko5 cascade in reponse
 	@PutMapping("/toko5s/toko5/{id}")
 	public Toko5 updateToko5(@PathVariable("id") String id,@RequestParam("withReponse") boolean withRep,@RequestParam("notify") boolean notify, @RequestBody UpdateToko5Request dto) throws Exception{
-		//Optional<Toko5> opt = toko5Repository.findById(UUID.fromString(id));
-		//if(opt.isEmpty()) return null;
 		log.info(dto.toString());
 		Optional<Toko5> opttk = toko5Repository.findById(dto.getToko5().getToko5Id());
 		if(opttk.isEmpty()) {
@@ -591,22 +599,6 @@ public class HseApi {
 	}
 	
 	
-//	@GetMapping("/toko5s/societes")
-//	public List<Societe> getListSociete() throws Exception{
-//		return societeRepository.findAll();
-//	}
-//	
-//	@PutMapping("/toko5s/societes/{id}")
-//	public Societe updateSociete(@RequestBody Societe toUpdate) throws Exception{
-//		return societeRepository.save(toUpdate);
-//	}
-//	
-//	@PostMapping("/toko5s/societes")
-//	public Societe addSociete(@RequestBody Societe toAdd) throws Exception{
-//		return societeRepository.save(toAdd);
-//	}
-	
-	
 	@GetMapping("/toko5s/tasks")
 	public List<Task> getAllTasks(){
 		return taskRepository.findAll();
@@ -664,6 +656,37 @@ public class HseApi {
 	public void deleteTask(@PathVariable("id") Integer taskId) throws Exception{
 		taskRepository.deleteById(taskId);
 		return;
+	}
+	
+	
+	
+	
+//	Suivi de taches
+	
+	
+	@PostMapping("/toko5s/tasks")
+	public TaskDetail addTask(@RequestBody TaskDetailDto dto) throws Exception{
+		Task task = taskRepository.getReferenceById(dto.getTaskId());
+		TaskDetail toAdd = new TaskDetail();
+		toAdd.setDescription(dto.getDescription());
+		toAdd.setWorkersNumber(dto.getWorkersNumber());
+		toAdd.setTask(task);
+		toAdd.setDate(dto.getDate());
+		
+		Random rand = new Random();
+        int num1 = rand.nextInt(10); 
+        int num2 = rand.nextInt(10);
+        int num3 = rand.nextInt(10);
+        int num4 = rand.nextInt(10);
+        String code =String.valueOf(num1)+String.valueOf(num2)+String.valueOf(num3)+String.valueOf(num4);
+        toAdd.setCode(Integer.valueOf(code));
+		return taskDetailRepository.save(toAdd);
+	}
+	
+	
+	@GetMapping("/toko5s/tasks")
+	public List<TaskDetail> listTask(@RequestParam("date") String date){
+		return taskDetailRepository.findByDate(date);
 	}
 	
 }
