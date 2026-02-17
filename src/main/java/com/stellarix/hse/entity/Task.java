@@ -23,6 +23,9 @@ public class Task {
 	private Integer taskId = 0;
 	private String nom;
 	
+	@Column(unique=true)
+	private String abbreviation;
+	
 	@ManyToMany(
 			fetch = FetchType.EAGER
 	)

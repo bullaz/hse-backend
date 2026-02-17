@@ -325,3 +325,26 @@ F1rstPssWrD.STX2025
 motdepassestx2002--
 
 motdepassestx2002--
+
+
+
+extension usecase (1): 
+
+1- hse planify task (with number of worker required)-> finish -> generate code intervenant and code supervisor (format code : (idsociete)-(yearmonthdayhour)-(taskId)-(work/sup))
+example for intervenant : stx-20260121-09-switch-work
+example for supervisor : stx-20260121-09-switch-sup
+use qrcode as optional to make it less painful to write
+
+
+2-when worker or sup login : use code
+
+
+why : 
+-now we can see the workers for a task planified not only raw take 5 without any task
+-and for the supervisor. they can see how many workers finished their take 5 if internet is available because the supervisor interface use api the check data from the server..
+
+why use code : so that workers can complete take 5 without prior internet connection . Later when internet available app the HSE app use that code to identify which task planified correspond to that take 5.
+
+extension usecase (2): 
+for workers take section epi/ppe:
+add an option for ai epi detection : so the worker take a photo and the ai model identify the list of epi he got on him..

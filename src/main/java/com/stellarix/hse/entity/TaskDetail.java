@@ -26,7 +26,7 @@ import lombok.ToString;
 )
 public class TaskDetail {
 	@Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)		
     @Column(name = "task_detail_id", updatable = false, nullable = false)
     private Integer taskDetailId;
 	
@@ -34,6 +34,9 @@ public class TaskDetail {
 	private ZonedDateTime date;
 	
 	private String description;
+	
+	@ManyToOne(fetch = FetchType.EAGER)
+	private Location location;
 	
 	@Column(name = "workers_number")
 	private Integer workersNumber;
@@ -43,5 +46,9 @@ public class TaskDetail {
     )
 	private Task task;
 	
-	private Integer code;
+	@Column(unique = true)
+	private String codeSup;
+	
+	@Column(unique = true)
+	private String codeWorker;
 }

@@ -96,23 +96,23 @@ public class HseApi {
     
     private final HseRepository hseRepository;
     
-    private UserDetailsService userDetailsService;
+    private final UserDetailsService userDetailsService;
 	
-    private Toko5Repository toko5Repository;
+    private final Toko5Repository toko5Repository;
     
-    private QuestionRepository questionRepository;
+    private final QuestionRepository questionRepository;
     
-    private CommentaireRepository commentaireRepository;
+    private final CommentaireRepository commentaireRepository;
     
-    private MesureControleRepository mesureControleRepository;
+    private final MesureControleRepository mesureControleRepository;
     
-    private ReponseRepository reponseRepository;
+    private final ReponseRepository reponseRepository;
     
-    private SocieteRepository societeRepository;
+    private final SocieteRepository societeRepository;
     
-    private TaskRepository taskRepository;
+    private final TaskRepository taskRepository;
     
-    private TaskDetailRepository taskDetailRepository;
+    private final TaskDetailRepository taskDetailRepository;
     
     private SimpMessagingTemplate messagingTemplate;
     
@@ -605,13 +605,15 @@ public class HseApi {
 	}
 	
 	
-	@GetMapping("/toko5s/questions_with_picto")
-	public List<Question> getListQuestionWithPicto() throws Exception{
-		return questionRepository.findByCategorieNot("safety");
-	}
+//	@GetMapping("/toko5s/questions_with_picto")
+//	public List<Question> getListQuestionWithPicto() throws Exception{
+//		return questionRepository.findByCategorieNot("safety");
+//	}
 
 	@GetMapping("/toko5s/questions")
-	public List<Question> getListQuestion() throws Exception{
+	public List<Question> getListQuestion(@RequestParam("category") String category) throws Exception{
+		if(category != null) {
+			return questionRepository.findByCategorie(category);		}
 		return questionRepository.findAll();
 	}
 	
@@ -664,14 +666,14 @@ public class HseApi {
 //	Suivi de taches
 	
 	
-	@PostMapping("/toko5s/tasks")
+	@PostMapping("/toko5s/tasks_tracking")
 	public TaskDetail addTask(@RequestBody TaskDetailDto dto) throws Exception{
 		Task task = taskRepository.getReferenceById(dto.getTaskId());
 		TaskDetail toAdd = new TaskDetail();
 		toAdd.setDescription(dto.getDescription());
 		toAdd.setWorkersNumber(dto.getWorkersNumber());
 		toAdd.setTask(task);
-		toAdd.setDate(dto.getDate());
+		//toAdd.setDate(dto.getDate());
 		
 		Random rand = new Random();
         int num1 = rand.nextInt(10); 
@@ -679,15 +681,14 @@ public class HseApi {
         int num3 = rand.nextInt(10);
         int num4 = rand.nextInt(10);
         String code =String.valueOf(num1)+String.valueOf(num2)+String.valueOf(num3)+String.valueOf(num4);
-        toAdd.setCode(Integer.valueOf(code));
+        //toAdd.setCode(Integer.valueOf(code));
 		return taskDetailRepository.save(toAdd);
 	}
 	
 	
-	@GetMapping("/toko5s/tasks")
+	@GetMapping("/toko5s/tasks_tracking")
 	public List<TaskDetail> listTask(@RequestParam("date") String date){
 		return taskDetailRepository.findByDate(date);
 	}
 	
 }
-	

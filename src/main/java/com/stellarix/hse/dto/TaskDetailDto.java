@@ -10,4 +10,5 @@ public class TaskDetailDto {
 	LocalDateTime date;
 	String description;
 	Integer taskId;
+	
 }
