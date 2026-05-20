@@ -14,7 +14,6 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-//import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -30,8 +29,11 @@ import java.util.Arrays;
 import java.util.List;
 
 @Slf4j
-@Configuration @EnableWebSecurity @EnableMethodSecurity(prePostEnabled = true) @RequiredArgsConstructor
-public class SecurityConfig /*extends WebSecurityConfigurerAdapter */{
+@Configuration
+@EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = true)
+@RequiredArgsConstructor
+public class SecurityConfig {
 	
 	@Lazy
 	private final JwtAuthFilter jwtAuthFilter;
@@ -51,18 +53,17 @@ public class SecurityConfig /*extends WebSecurityConfigurerAdapter */{
         	.csrf(csrf -> csrf.disable())
 
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/hse/test" , "/hse/signin", "/hse/signup", "/hse/refresh_token", "/hse/test", "/hse/logout", "/hse/verify_token", "/hse/toko5s/toko5/{id}","/hse/ws/**", "/hse/toko5s/toko5/{id}/comments/**", "/hse/societes/**").permitAll()
-                
-                .requestMatchers(HttpMethod.POST, "/hse/toko5s").permitAll()
-                
-                .requestMatchers(HttpMethod.PUT, "/hse/toko5s/toko5/{id}/resolve").permitAll()
-                
-                .requestMatchers(HttpMethod.GET, "/hse/toko5s/refresh_state").permitAll()
-                
-                .requestMatchers("/hse/toko5s/toko5/{id}/mesures_controle/**").permitAll()
-                
+                // Auth
+                .requestMatchers("/hse/test", "/hse/signin", "/hse/refresh_token", "/hse/logout", "/hse/verify_token").permitAll()
+                // WebSocket
+                .requestMatchers("/hse/ws/**").permitAll()
+                // Mobile — read-only lookups
+                .requestMatchers(HttpMethod.GET, "/hse/sites", "/hse/ppe-items", "/hse/ppe-matrix", "/hse/inductions/verify").permitAll()
+                // Mobile — submit verification + offline sync + rejected image upload
+                .requestMatchers(HttpMethod.POST, "/hse/verifications", "/hse/verifications/sync").permitAll()
+                .requestMatchers(HttpMethod.POST, "/hse/verifications/*/image").permitAll()
+                // Everything else requires HSE authority
                 .requestMatchers("/hse/**").hasAuthority("HSE")
-                
                 .anyRequest().authenticated()
             )
 
@@ -80,11 +81,7 @@ public class SecurityConfig /*extends WebSecurityConfigurerAdapter */{
     protected CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration().applyPermitDefaultValues();
 
-//        configuration.setAllowedOrigins(List.of("http://localhost:8005"));
-//        configuration.setAllowedMethods(List.of("GET","POST"));
-//        configuration.setAllowedHeaders(List.of("Authorization","Content-Type"));
-        //log.info(frontendUrl);
-        String origin = frontendUrl.endsWith("/") ? 
+        String origin = frontendUrl.endsWith("/") ?
                 frontendUrl.substring(0, frontendUrl.length() - 1) : frontendUrl;
         
         configuration.setAllowedOrigins(List.of(origin));

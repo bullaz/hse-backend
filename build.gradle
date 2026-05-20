@@ -26,14 +26,16 @@ repositories {
 
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'com.bucket4j:bucket4j-core:8.10.1'
+	implementation 'com.github.ben-manes.caffeine:caffeine'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-websocket'
 	implementation 'com.auth0:java-jwt:4.5.0'
 	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
 	implementation 'com.google.firebase:firebase-admin:9.7.0'
-	implementation 'org.springframework.boot:spring-boot-starter-data-rest'
-	compileOnly 'org.projectlombok:lombok'
+compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	runtimeOnly 'org.postgresql:postgresql'
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
@@ -42,6 +44,10 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.withType(JavaCompile).configureEach {
+	options.compilerArgs << '-parameters'
 }
 
 tasks.named('test') {

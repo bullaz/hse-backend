@@ -8,78 +8,102 @@ import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 
 @Slf4j
 @Component
 public class JwtService {
 
-	@Value("${jwt.secret}")
+    @Value("${jwt.secret}")
     private String SECRET;
 
-    public Map<String,String> generateToken(String email, String nom, String prenom) { // Use email as username
+    // --- Public token generation ---
+
+    public Map<String, String> generateToken(String email, String nom, String prenom, UUID jti) {
         Map<String, Object> claims = new HashMap<>();
-        claims.put("nom",nom);
+        claims.put("nom", nom);
         claims.put("prenom", prenom);
         Map<String, String> tokens = new HashMap<>();
-      //return createToken(claims, email);
-        tokens.put("access_token", createToken(claims, email));
-        tokens.put("refresh_token", createRefreshToken(claims, email));
+        tokens.put("access_token", createAccessToken(claims, email));
+        tokens.put("refresh_token", createRefreshToken(claims, email, jti));
         return tokens;
     }
-    
-    public String generateAccessToken(String email) { // Use email as username
+
+    public String generateAccessToken(String email, String nom, String prenom) {
         Map<String, Object> claims = new HashMap<>();
-        return createToken(claims, email);
+        claims.put("nom", nom);
+        claims.put("prenom", prenom);
+        return createAccessToken(claims, email);
     }
 
-    private String createToken(Map<String, Object> claims, String email) {
-        return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(email)
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 60 * 60 * 1000))
-                .signWith(getSignKey(), SignatureAlgorithm.HS256)
-                .compact();
-    }
-    
-    private String createRefreshToken(Map<String, Object> claims, String email) {
-        return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(email)
-                .setIssuedAt(new Date())
-                //.setExpiration(new Date(System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000))
-                .setExpiration(new Date(System.currentTimeMillis() + 3 * 60 * 60 * 1000))
-                .signWith(getSignKey(), SignatureAlgorithm.HS256)
-                .compact();
+    public String generateRefreshToken(String email, String nom, String prenom, UUID jti) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("nom", nom);
+        claims.put("prenom", prenom);
+        return createRefreshToken(claims, email, jti);
     }
 
-    private Key getSignKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(SECRET);
-        return Keys.hmacShaKeyFor(keyBytes);
-    }
+    // --- Public claim extraction ---
 
-    public String extractUsername(String token) throws Exception{
+    public String extractUsername(String token) throws Exception {
         return extractClaim(token, Claims::getSubject);
     }
 
-    public Date extractExpiration(String token) throws Exception{
-        return extractClaim(token, Claims::getExpiration);
+    public UUID extractJti(String token) throws Exception {
+        return UUID.fromString(extractAllClaims(token).getId());
     }
 
-    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) throws Exception {
-        final Claims claims = extractAllClaims(token);
-        return claimsResolver.apply(claims);
+    // --- Validation ---
+
+    public boolean validateToken(String token) {
+        try {
+            return !extractClaim(token, Claims::getExpiration).before(new Date());
+        } catch (Exception e) {
+            return false;
+        }
     }
 
-    private Claims extractAllClaims(String token) throws Exception{
+    // --- Private token builders ---
+
+    private String createAccessToken(Map<String, Object> claims, String email) {
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(email)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + 60 * 60 * 1000L))
+                .signWith(getSignKey(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    private String createRefreshToken(Map<String, Object> claims, String email, UUID jti) {
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(email)
+                .setId(jti.toString())
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + 7L * 24 * 60 * 60 * 1000))
+                .signWith(getSignKey(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    // --- Private helpers ---
+
+    private <T> T extractClaim(String token, Function<Claims, T> resolver) throws RuntimeException {
+        try {
+            return resolver.apply(extractAllClaims(token));
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage(), e);
+        }
+    }
+
+    private Claims extractAllClaims(String token) throws Exception {
         return Jwts.parserBuilder()
                 .setSigningKey(getSignKey())
                 .build()
@@ -87,21 +111,7 @@ public class JwtService {
                 .getBody();
     }
 
-    private Boolean isTokenExpired(String token) throws Exception{
-        return extractExpiration(token).before(new Date());
-    }
-
-    public Boolean validateToken(String token/*, UserDetails userDetails*/){
-        //final String username = extractUsername(token);
-        
-        //return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
-    	//log.info(String.format("validate token %b",!isTokenExpired(token)));
-    	boolean etat = false;
-    	try {
-    		etat = !isTokenExpired(token);
-    	}catch(Exception e) {
-    		etat = false;
-    	}
-    	return etat;
+    private Key getSignKey() {
+        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(SECRET));
     }
 }

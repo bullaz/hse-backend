@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -14,22 +12,18 @@ import org.springframework.stereotype.Service;
 
 import com.stellarix.hse.entity.Hse;
 import com.stellarix.hse.repository.HseRepository;
+import com.stellarix.hse.security.UserInfoDetails;
 
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
-public class AccountService implements UserDetailsService{
-	
+@RequiredArgsConstructor
+public class AccountService implements UserDetailsService {
+
+    private final HseRepository hseRepository;
     private final PasswordEncoder encoder;
-	private final HseRepository hseRepository;
-	
-	@Autowired
-    public AccountService(HseRepository repository, PasswordEncoder encoder) {
-        this.hseRepository = repository;
-        this.encoder = encoder;
-    }
 
 	@Override
 	public UserDetails loadUserByUsername(String usernameOrEmail) throws UsernameNotFoundException {
@@ -50,6 +44,11 @@ public class AccountService implements UserDetailsService{
 	}
 	
 	
+    public Hse findByUsernameOrEmail(String value) {
+        return hseRepository.findByUsernameOrEmail(value, value)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + value));
+    }
+
     public String addUser(Hse hseUser) throws Exception{
         hseUser.setPassword(encoder.encode(hseUser.getPassword())); 
         hseRepository.save(hseUser);
