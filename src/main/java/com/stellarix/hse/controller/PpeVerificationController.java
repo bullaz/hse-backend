@@ -6,7 +6,9 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -23,7 +25,9 @@ import com.stellarix.hse.dto.PageResponse;
 import com.stellarix.hse.dto.PpeVerificationRequest;
 import com.stellarix.hse.dto.TopWorkerStatDto;
 import com.stellarix.hse.dto.VerificationLogResponse;
+import com.stellarix.hse.service.PdfService;
 import com.stellarix.hse.service.PpeVerificationService;
+import com.stellarix.hse.service.SiteService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +40,8 @@ import lombok.extern.slf4j.Slf4j;
 public class PpeVerificationController {
 
     private final PpeVerificationService service;
+    private final PdfService pdfService;
+    private final SiteService siteService;
 
     /** Mobile submits a completed PPE verification result. */
     @PostMapping
@@ -63,6 +69,13 @@ public class PpeVerificationController {
         return ResponseEntity.ok().build();
     }
 
+    /** Supervisor certifies a VALIDATED log via the mobile app. */
+    @org.springframework.web.bind.annotation.PatchMapping("/{logId}/certify")
+    public ResponseEntity<Void> certify(@PathVariable UUID logId) {
+        service.certify(logId);
+        return ResponseEntity.noContent().build();
+    }
+
     // --- Backoffice endpoints (HSE role required) ---
 
     @GetMapping("/logs")
@@ -82,6 +95,21 @@ public class PpeVerificationController {
             @RequestParam("to") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to,
             @RequestParam(name = "siteId", required = false) Integer siteId) {
         return service.getMissingPpeStats(from, to, siteId);
+    }
+
+    @GetMapping("/export/pdf")
+    public ResponseEntity<byte[]> exportPdf(
+            @RequestParam("from") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+            @RequestParam("to") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to,
+            @RequestParam(name = "siteId", required = false) Integer siteId,
+            @RequestParam(name = "intent", required = false) String intent) throws Exception {
+        List<VerificationLogResponse> logs = service.getAllLogsForExport(from, to, siteId, intent);
+        String siteName = siteId != null ? siteService.findById(siteId).getName() : null;
+        byte[] pdf = pdfService.generateLogsExportPdf(logs, from, to, siteName, intent);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"hse-logs.pdf\"")
+                .body(pdf);
     }
 
     @GetMapping("/stats/top-workers")

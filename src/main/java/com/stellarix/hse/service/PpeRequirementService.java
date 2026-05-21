@@ -1,5 +1,7 @@
 package com.stellarix.hse.service;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -29,6 +31,24 @@ public class PpeRequirementService {
     private final PpeRequirementRepository requirementRepository;
     private final SiteRepository siteRepository;
     private final PpeItemRepository ppeItemRepository;
+
+    /** Mobile calls this on startup to cache the full PPE matrix across all sites. */
+    public List<Map<String, Object>> getMobileFlatCache() {
+        record Key(int siteId, String intent) {}
+        return requirementRepository.findAll().stream()
+                .collect(Collectors.groupingBy(
+                        r -> new Key(r.getSite().getSiteId(), r.getIntent()),
+                        LinkedHashMap::new,
+                        Collectors.mapping(r -> r.getPpeItem().getCode(), Collectors.toCollection(ArrayList::new))
+                ))
+                .entrySet().stream()
+                .map(e -> Map.<String, Object>of(
+                        "siteId", e.getKey().siteId(),
+                        "intent", e.getKey().intent(),
+                        "ppeCodes", e.getValue()
+                ))
+                .collect(Collectors.toList());
+    }
 
     /** Returns the full PPE matrix for a site grouped by intent — used by mobile on startup. */
     public PpeMatrixResponse getMatrixForSite(Integer siteId) {

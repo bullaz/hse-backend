@@ -1,5 +1,8 @@
 package com.stellarix.hse.controller;
 
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -26,6 +29,12 @@ import lombok.RequiredArgsConstructor;
 public class PpeRequirementController {
 
     private final PpeRequirementService service;
+
+    /** Mobile calls this on startup to cache the full PPE matrix across all sites. */
+    @GetMapping("/mobile-cache")
+    public List<Map<String, Object>> getMobileCache() {
+        return service.getMobileFlatCache();
+    }
 
     /** Mobile calls this on startup to cache the full PPE matrix for a site. */
     @GetMapping

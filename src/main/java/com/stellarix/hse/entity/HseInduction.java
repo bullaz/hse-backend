@@ -1,14 +1,20 @@
 package com.stellarix.hse.entity;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -36,8 +42,25 @@ public class HseInduction {
     @Column(name = "last_name", nullable = false)
     private String lastName;
 
+    @Column
+    private String phone;
+
+    @Column
+    private String email;
+
+    @Column
+    private String work;
+
     @Column(name = "registered_at", nullable = false, updatable = false)
     private LocalDateTime registeredAt;
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "induction_habilitation",
+            joinColumns = @JoinColumn(name = "induction_id"),
+            inverseJoinColumns = @JoinColumn(name = "habilitation_id")
+    )
+    private List<Habilitation> habilitations = new ArrayList<>();
 
     @PrePersist
     void prePersist() {

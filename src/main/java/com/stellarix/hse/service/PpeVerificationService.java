@@ -80,6 +80,16 @@ public class PpeVerificationService {
         }).toList();
 
         resultRepository.saveAll(results);
+
+        if ("REJECTED".equals(request.getStatus())) {
+            List<String> causes = request.getItemResults().stream()
+                    .filter(r -> !r.isDetected())
+                    .map(r -> "MISSING_PPE:" + r.getPpeItemCode())
+                    .toList();
+            saved.setRejectionCauses(causes);
+            logRepository.save(saved);
+        }
+
         return saved;
     }
 
@@ -100,6 +110,18 @@ public class PpeVerificationService {
         image.setEncryptedData(encryptedStream.readAllBytes());
         image.setExpiresAt(log.getCapturedAt().plusHours(48));
         imageRepository.save(image);
+    }
+
+    /** Supervisor certifies a VALIDATED log — stamps certifiedAt. */
+    @Transactional
+    public void certify(UUID logId) {
+        PpeVerificationLog log = logRepository.findById(logId)
+                .orElseThrow(() -> new EntityNotFoundException("Verification log not found: " + logId));
+        if (!"VALIDATED".equals(log.getStatus())) {
+            throw new IllegalArgumentException("Only VALIDATED logs can be certified");
+        }
+        log.setCertifiedAt(LocalDateTime.now());
+        logRepository.save(log);
     }
 
     /** Batch sync for offline results — idempotent (duplicate logIds are ignored). */
@@ -123,6 +145,22 @@ public class PpeVerificationService {
             logs = logRepository.findByCapturedAtBetween(from, to, pageable);
         }
         return logs.map(this::toResponse);
+    }
+
+    /** Returns all logs matching the filters as a flat list — used for PDF export. */
+    public List<VerificationLogResponse> getAllLogsForExport(LocalDateTime from, LocalDateTime to,
+                                                              Integer siteId, String intent) {
+        int totalPages = 1;
+        int page = 0;
+        java.util.List<VerificationLogResponse> all = new java.util.ArrayList<>();
+        do {
+            org.springframework.data.domain.Page<VerificationLogResponse> batch =
+                    getLogs(from, to, siteId, intent, page, 200);
+            all.addAll(batch.getContent());
+            totalPages = batch.getTotalPages();
+            page++;
+        } while (page < totalPages);
+        return all;
     }
 
     public List<MissingPpeStatDto> getMissingPpeStats(LocalDateTime from, LocalDateTime to, Integer siteId) {
@@ -166,6 +204,8 @@ public class PpeVerificationService {
                 .offline(log.isOffline())
                 .syncedAt(log.getSyncedAt())
                 .itemResults(items)
+                .rejectionCauses(log.getRejectionCauses())
+                .certifiedAt(log.getCertifiedAt())
                 .build();
     }
 }

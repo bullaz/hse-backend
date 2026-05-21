@@ -1,5 +1,6 @@
 package com.stellarix.hse.controller;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -36,15 +37,21 @@ public class HseInductionController {
         return new PageResponse<>(service.getAll(page, size));
     }
 
-    /** Mobile calls this before the PPE check to verify the worker's induction status. */
+    /** Mobile calls this on startup to cache all inducted names (with IDs) for offline checks. */
+    @GetMapping("/names")
+    public List<Map<String, Object>> getAllNames() {
+        return service.getAllNames();
+    }
+
+    /** Mobile calls this before the PPE check. Returns {@code {inducted, inductionId?}}. */
     @GetMapping("/verify")
-    public Map<String, Boolean> verify(@RequestParam String firstName, @RequestParam String lastName) {
-        return Map.of("inducted", service.isInducted(firstName, lastName));
+    public Map<String, Object> verify(@RequestParam String firstName, @RequestParam String lastName) {
+        return service.verifyInduction(firstName, lastName);
     }
 
     @PostMapping
     public ResponseEntity<HseInduction> add(@Valid @RequestBody HseInductionRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.add(request.getFirstName(), request.getLastName()));
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.add(request));
     }
 
     @DeleteMapping("/{id}")

@@ -57,11 +57,12 @@ public class SecurityConfig {
                 .requestMatchers("/hse/test", "/hse/signin", "/hse/refresh_token", "/hse/logout", "/hse/verify_token").permitAll()
                 // WebSocket
                 .requestMatchers("/hse/ws/**").permitAll()
-                // Mobile — read-only lookups
-                .requestMatchers(HttpMethod.GET, "/hse/sites", "/hse/ppe-items", "/hse/ppe-matrix", "/hse/inductions/verify").permitAll()
-                // Mobile — submit verification + offline sync + rejected image upload
+                // Mobile and backoffice — read-only lookups (no auth required)
+                .requestMatchers(HttpMethod.GET, "/hse/sites", "/hse/ppe-items", "/hse/ppe-matrix", "/hse/ppe-matrix/mobile-cache", "/hse/inductions/verify", "/hse/inductions/names", "/hse/zone-types", "/hse/habilitations", "/hse/permits/verify").permitAll()
+                // Mobile — submit verification + offline sync + rejected image upload + certify
                 .requestMatchers(HttpMethod.POST, "/hse/verifications", "/hse/verifications/sync").permitAll()
                 .requestMatchers(HttpMethod.POST, "/hse/verifications/*/image").permitAll()
+                .requestMatchers(HttpMethod.PATCH, "/hse/verifications/*/certify").permitAll()
                 // Everything else requires HSE authority
                 .requestMatchers("/hse/**").hasAuthority("HSE")
                 .anyRequest().authenticated()

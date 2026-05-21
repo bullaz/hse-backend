@@ -4,8 +4,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import com.stellarix.hse.converter.StringListConverter;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
@@ -56,6 +58,13 @@ public class PpeVerificationLog {
 
     @Column(name = "synced_at")
     private LocalDateTime syncedAt;
+
+    @Column(name = "rejection_causes")
+    @Convert(converter = StringListConverter.class)
+    private List<String> rejectionCauses;
+
+    @Column(name = "certified_at")
+    private LocalDateTime certifiedAt;
 
     @OneToMany(mappedBy = "verificationLog", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     private List<PpeItemResult> itemResults;

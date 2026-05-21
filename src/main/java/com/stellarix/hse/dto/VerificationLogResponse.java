@@ -24,6 +24,8 @@ public class VerificationLogResponse {
     private boolean offline;
     private LocalDateTime syncedAt;
     private List<ItemResultDto> itemResults;
+    private List<String> rejectionCauses;
+    private LocalDateTime certifiedAt;
 
     @Data
     @AllArgsConstructor
