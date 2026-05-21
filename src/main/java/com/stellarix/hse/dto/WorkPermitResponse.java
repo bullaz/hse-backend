@@ -19,9 +19,11 @@ public class WorkPermitResponse {
     private PersonDto person;
     private SiteDto site;
     private String description;
+    private PermitTypeDto permitType;
     private LocalDateTime startDatetime;
     private LocalDateTime endDatetime;
     private String status;
+    private boolean hasFile;
     private LocalDateTime createdAt;
     /** Non-null only on creation — codes of habilitations the person lacks for this site. */
     private List<String> missingHabilitations;
@@ -32,6 +34,7 @@ public class WorkPermitResponse {
         private String firstName;
         private String lastName;
         private String email;
+        private String phone;
     }
 
     @Data @AllArgsConstructor @NoArgsConstructor
@@ -39,5 +42,12 @@ public class WorkPermitResponse {
         private Integer id;
         private String name;
         private String zoneType;
+    }
+
+    @Data @AllArgsConstructor @NoArgsConstructor
+    public static class PermitTypeDto {
+        private Integer id;
+        private String code;
+        private String label;
     }
 }

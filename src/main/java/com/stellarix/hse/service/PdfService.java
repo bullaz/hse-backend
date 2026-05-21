@@ -121,7 +121,7 @@ public class PdfService {
                 cs.setNonStrokingColor(0f, 0f, 0f);
 
                 // Filter summary
-                String period = from.format(FMT) + " → " + to.format(FMT);
+                String period = from.format(FMT) + " - " + to.format(FMT);
                 String filters = "Période : " + period
                         + (siteName != null ? "  |  Site : " + siteName : "")
                         + (intent != null ? "  |  Type : " + intent : "");
@@ -193,6 +193,6 @@ public class PdfService {
 
     private String truncate(String s, int max) {
         if (s == null) return "";
-        return s.length() > max ? s.substring(0, max - 1) + "…" : s;
+        return s.length() > max ? s.substring(0, max - 1) + "." : s;
     }
 }

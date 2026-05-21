@@ -18,8 +18,8 @@ import lombok.ToString;
 import org.hibernate.annotations.Check;
 
 /**
- * PPE Matrix row: for a given site + intent, this PPE item is required.
- * Query all rows matching (site, intent) to get the full required set.
+ * PPE Matrix row: for a given zone type + intent, this PPE item is required.
+ * All sites sharing the same zone type inherit the same requirements.
  */
 @Entity
 @Data
@@ -28,7 +28,7 @@ import org.hibernate.annotations.Check;
 @ToString
 @Table(
     name = "ppe_requirement",
-    uniqueConstraints = @UniqueConstraint(columnNames = {"site_id", "intent", "ppe_item_id"})
+    uniqueConstraints = @UniqueConstraint(columnNames = {"zone_type_id", "intent", "ppe_item_id"})
 )
 public class PpeRequirement {
 
@@ -39,8 +39,8 @@ public class PpeRequirement {
     private Integer requirementId;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "site_id", nullable = false)
-    private Site site;
+    @JoinColumn(name = "zone_type_id", nullable = false)
+    private ZoneType zoneType;
 
     @Column(nullable = false)
     @Check(constraints = "intent in ('WORK','VISIT')")

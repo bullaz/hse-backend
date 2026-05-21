@@ -14,9 +14,11 @@ import com.stellarix.hse.dto.WorkPermitRequest;
 import com.stellarix.hse.dto.WorkPermitResponse;
 import com.stellarix.hse.dto.WorkPermitVerifyResponse;
 import com.stellarix.hse.entity.HseInduction;
+import com.stellarix.hse.entity.PermitType;
 import com.stellarix.hse.entity.Site;
 import com.stellarix.hse.entity.WorkPermit;
 import com.stellarix.hse.repository.HseInductionRepository;
+import com.stellarix.hse.repository.PermitTypeRepository;
 import com.stellarix.hse.repository.SiteRepository;
 import com.stellarix.hse.repository.WorkPermitRepository;
 
@@ -35,6 +37,7 @@ public class WorkPermitService {
     private final WorkPermitRepository repository;
     private final HseInductionRepository inductionRepository;
     private final SiteRepository siteRepository;
+    private final PermitTypeRepository permitTypeRepository;
     private final EmailService emailService;
 
     @Transactional
@@ -45,11 +48,19 @@ public class WorkPermitService {
         Site site = siteRepository.findById(request.getSiteId())
                 .orElseThrow(() -> new EntityNotFoundException("Site not found: " + request.getSiteId()));
 
-        List<String> missingHabilitations = site.getHabilitations().stream()
+        List<String> missingHabilitations = (site.getZoneType() != null
+                ? site.getZoneType().getHabilitations()
+                : List.<com.stellarix.hse.entity.Habilitation>of()).stream()
                 .filter(h -> induction.getHabilitations().stream()
                         .noneMatch(ih -> ih.getHabilitationId().equals(h.getHabilitationId())))
                 .map(h -> h.getCode())
                 .toList();
+
+        PermitType permitType = null;
+        if (request.getPermitTypeId() != null) {
+            permitType = permitTypeRepository.findById(request.getPermitTypeId())
+                    .orElseThrow(() -> new EntityNotFoundException("Permit type not found: " + request.getPermitTypeId()));
+        }
 
         WorkPermit permit = new WorkPermit();
         permit.setPermitId(generateUniquePermitId());
@@ -58,6 +69,7 @@ public class WorkPermitService {
         permit.setDescription(request.getDescription());
         permit.setStartDatetime(request.getStartDatetime());
         permit.setEndDatetime(request.getEndDatetime());
+        permit.setPermitType(permitType);
         WorkPermit saved = repository.save(permit);
 
         emailService.sendPermitEmail(saved);
@@ -65,11 +77,14 @@ public class WorkPermitService {
         return toResponse(saved, missingHabilitations);
     }
 
-    public PageResponse<WorkPermitResponse> getAll(String name, Integer siteId, String status, int page, int size) {
+    public PageResponse<WorkPermitResponse> getAll(String name, Integer siteId, String status,
+                                                    String dateFrom, String dateTo, int page, int size) {
         Page<WorkPermit> results = repository.findWithFilters(
                 name != null && !name.isBlank() ? name : null,
                 siteId,
                 status,
+                dateFrom,
+                dateTo,
                 PageRequest.of(page, size));
         return new PageResponse<>(results.map(w -> toResponse(w, null)));
     }
@@ -80,6 +95,16 @@ public class WorkPermitService {
                 .orElseThrow(() -> new EntityNotFoundException("Work permit not found: " + permitId));
         permit.setStatus("REVOKED");
         repository.save(permit);
+    }
+
+    @Transactional
+    public void attachPermitFile(String permitId, String fileName, String contentType, byte[] data) {
+        WorkPermit permit = findById(permitId);
+        permit.setPermitFileName(fileName);
+        permit.setPermitFileData(data);
+        permit.setPermitFileContentType(contentType != null ? contentType : "application/octet-stream");
+        repository.save(permit);
+        emailService.sendPermitEmail(permit);
     }
 
     /** Mobile endpoint — validates permit ID, site match, and time window (start−1h ≤ now ≤ end). */
@@ -125,7 +150,8 @@ public class WorkPermitService {
                 permit.getInduction().getInductionId(),
                 permit.getInduction().getFirstName(),
                 permit.getInduction().getLastName(),
-                permit.getInduction().getEmail());
+                permit.getInduction().getEmail(),
+                permit.getInduction().getPhone());
 
         String zoneTypeLabel = permit.getSite().getZoneType() != null
                 ? permit.getSite().getZoneType().getLabel() : null;
@@ -134,14 +160,24 @@ public class WorkPermitService {
                 permit.getSite().getName(),
                 zoneTypeLabel);
 
+        WorkPermitResponse.PermitTypeDto permitTypeDto = null;
+        if (permit.getPermitType() != null) {
+            permitTypeDto = new WorkPermitResponse.PermitTypeDto(
+                    permit.getPermitType().getPermitTypeId(),
+                    permit.getPermitType().getCode(),
+                    permit.getPermitType().getLabel());
+        }
+
         return WorkPermitResponse.builder()
                 .permitId(permit.getPermitId())
                 .person(person)
                 .site(site)
                 .description(permit.getDescription())
+                .permitType(permitTypeDto)
                 .startDatetime(permit.getStartDatetime())
                 .endDatetime(permit.getEndDatetime())
                 .status(computedStatus)
+                .hasFile(permit.getPermitFileData() != null)
                 .createdAt(permit.getCreatedAt())
                 .missingHabilitations(missingHabilitations)
                 .build();

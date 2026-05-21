@@ -8,18 +8,15 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import com.stellarix.hse.entity.PpeRequirement;
-import com.stellarix.hse.entity.Site;
 
 @Repository
 public interface PpeRequirementRepository extends JpaRepository<PpeRequirement, Integer> {
 
-    List<PpeRequirement> findBySiteAndIntent(Site site, String intent);
-
-    // Non-paginated — used by mobile matrix cache lookup
-    List<PpeRequirement> findBySite_SiteId(Integer siteId);
+    // Non-paginated — used by mobile matrix cache lookup (via zone type derived from site)
+    List<PpeRequirement> findByZoneType_ZoneTypeId(Integer zoneTypeId);
 
     // Paginated + filtered — used by backoffice table
-    Page<PpeRequirement> findBySite_SiteId(Integer siteId, Pageable pageable);
-    Page<PpeRequirement> findBySite_SiteIdAndIntent(Integer siteId, String intent, Pageable pageable);
+    Page<PpeRequirement> findByZoneType_ZoneTypeId(Integer zoneTypeId, Pageable pageable);
+    Page<PpeRequirement> findByZoneType_ZoneTypeIdAndIntent(Integer zoneTypeId, String intent, Pageable pageable);
     Page<PpeRequirement> findByIntent(String intent, Pageable pageable);
 }

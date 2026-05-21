@@ -1,6 +1,5 @@
 package com.stellarix.hse.service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -8,7 +7,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.stellarix.hse.dto.SiteRequest;
 import com.stellarix.hse.entity.Site;
-import com.stellarix.hse.repository.HabilitationRepository;
 import com.stellarix.hse.repository.SiteRepository;
 import com.stellarix.hse.repository.ZoneTypeRepository;
 
@@ -21,7 +19,6 @@ public class SiteService {
 
     private final SiteRepository repository;
     private final ZoneTypeRepository zoneTypeRepository;
-    private final HabilitationRepository habilitationRepository;
 
     public List<Site> getAll() {
         return repository.findAll();
@@ -61,8 +58,5 @@ public class SiteService {
         } else {
             site.setZoneType(null);
         }
-        site.setHabilitations(request.getHabilitationIds() != null && !request.getHabilitationIds().isEmpty()
-                ? habilitationRepository.findAllById(request.getHabilitationIds())
-                : new ArrayList<>());
     }
 }

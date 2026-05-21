@@ -17,4 +17,6 @@ public class HseInductionRequest {
     private String email;
     private String work;
     private List<Integer> habilitationIds;
+    private Integer companyId;
+    private Integer roleId;
 }

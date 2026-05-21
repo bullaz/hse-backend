@@ -7,7 +7,7 @@ import lombok.Data;
 @Data
 public class PpeRequirementRequest {
     @NotNull
-    private Integer siteId;
+    private Integer zoneTypeId;
 
     @NotNull
     @Pattern(regexp = "WORK|VISIT")

@@ -23,9 +23,12 @@ public class VerificationLogResponse {
     private LocalDateTime capturedAt;
     private boolean offline;
     private LocalDateTime syncedAt;
+    private String description;
     private List<ItemResultDto> itemResults;
     private List<String> rejectionCauses;
     private LocalDateTime certifiedAt;
+    private String permitId;
+    private String permitTypeLabel;
 
     @Data
     @AllArgsConstructor

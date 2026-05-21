@@ -59,12 +59,19 @@ public class PpeVerificationLog {
     @Column(name = "synced_at")
     private LocalDateTime syncedAt;
 
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description;
+
     @Column(name = "rejection_causes")
     @Convert(converter = StringListConverter.class)
     private List<String> rejectionCauses;
 
     @Column(name = "certified_at")
     private LocalDateTime certifiedAt;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "permit_id")
+    private WorkPermit permit;
 
     @OneToMany(mappedBy = "verificationLog", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     private List<PpeItemResult> itemResults;

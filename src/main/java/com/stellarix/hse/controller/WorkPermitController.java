@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.stellarix.hse.dto.PageResponse;
 import com.stellarix.hse.dto.WorkPermitRequest;
@@ -55,9 +56,17 @@ public class WorkPermitController {
             @RequestParam(required = false) String name,
             @RequestParam(required = false) Integer siteId,
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) String dateFrom,
+            @RequestParam(required = false) String dateTo,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return service.getAll(name, siteId, status, page, size);
+        return service.getAll(name, siteId, status, dateFrom, dateTo, page, size);
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('HSE')")
+    public WorkPermitResponse getById(@PathVariable String id) {
+        return service.toResponse(service.findById(id), null);
     }
 
     @DeleteMapping("/{id}")
@@ -65,6 +74,32 @@ public class WorkPermitController {
     public ResponseEntity<Void> revoke(@PathVariable String id) {
         service.revoke(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/file")
+    @PreAuthorize("hasAuthority('HSE')")
+    public ResponseEntity<Void> uploadPermitFile(
+            @PathVariable String id,
+            @RequestParam("file") MultipartFile file) throws Exception {
+        service.attachPermitFile(id, file.getOriginalFilename(), file.getContentType(), file.getBytes());
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{id}/file")
+    @PreAuthorize("hasAuthority('HSE')")
+    public ResponseEntity<byte[]> downloadPermitFile(@PathVariable String id) {
+        WorkPermit permit = service.findById(id);
+        if (permit.getPermitFileData() == null) {
+            return ResponseEntity.notFound().build();
+        }
+        String contentType = permit.getPermitFileContentType() != null
+                ? permit.getPermitFileContentType() : "application/octet-stream";
+        String disposition = "attachment; filename=\"" +
+                (permit.getPermitFileName() != null ? permit.getPermitFileName() : "permis.pdf") + "\"";
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition)
+                .body(permit.getPermitFileData());
     }
 
     @GetMapping("/{id}/qr.png")

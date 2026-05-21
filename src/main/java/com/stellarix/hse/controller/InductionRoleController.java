@@ -9,44 +9,36 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.stellarix.hse.dto.ZoneTypeRequest;
-import com.stellarix.hse.entity.ZoneType;
-import com.stellarix.hse.service.ZoneTypeService;
+import com.stellarix.hse.dto.InductionRoleRequest;
+import com.stellarix.hse.entity.InductionRole;
+import com.stellarix.hse.service.InductionRoleService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/hse/zone-types")
+@RequestMapping("/hse/induction-roles")
 @RequiredArgsConstructor
-public class ZoneTypeController {
+@PreAuthorize("hasAuthority('HSE')")
+public class InductionRoleController {
 
-    private final ZoneTypeService service;
+    private final InductionRoleService service;
 
     @GetMapping
-    public List<ZoneType> getAll() {
+    public List<InductionRole> getAll() {
         return service.getAll();
     }
 
     @PostMapping
-    @PreAuthorize("hasAuthority('HSE')")
-    public ResponseEntity<ZoneType> create(@Valid @RequestBody ZoneTypeRequest request) {
+    public ResponseEntity<InductionRole> create(@Valid @RequestBody InductionRoleRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.create(request));
     }
 
-    @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('HSE')")
-    public ResponseEntity<ZoneType> update(@PathVariable Integer id, @Valid @RequestBody ZoneTypeRequest request) {
-        return ResponseEntity.ok(service.update(id, request));
-    }
-
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('HSE')")
     public ResponseEntity<Void> delete(@PathVariable Integer id) {
         service.delete(id);
         return ResponseEntity.noContent().build();

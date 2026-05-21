@@ -1,13 +1,13 @@
 package com.stellarix.hse.dto;
 
-import java.util.List;
-
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
-public class ZoneTypeRequest {
+public class PermitTypeRequest {
+    @NotBlank
+    private String code;
     @NotBlank
     private String label;
-    private List<Integer> habilitationIds;
+    private String description;
 }

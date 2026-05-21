@@ -44,11 +44,11 @@ public class PpeRequirementController {
 
     @GetMapping("/all")
     public PageResponse<PpeRequirement> getAll(
-            @RequestParam(name = "siteId", required = false) Integer siteId,
+            @RequestParam(name = "zoneTypeId", required = false) Integer zoneTypeId,
             @RequestParam(name = "intent", required = false) String intent,
             @RequestParam(name = "page", defaultValue = "0") int page,
             @RequestParam(name = "size", defaultValue = "20") int size) {
-        return new PageResponse<>(service.getAllFiltered(siteId, intent, page, size));
+        return new PageResponse<>(service.getAllFiltered(zoneTypeId, intent, page, size));
     }
 
     @PostMapping

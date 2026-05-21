@@ -21,7 +21,6 @@ import com.stellarix.hse.entity.PpeItemResult;
 import com.stellarix.hse.entity.PpeRequirement;
 import com.stellarix.hse.entity.PpeVerificationLog;
 import com.stellarix.hse.entity.Site;
-import com.stellarix.hse.entity.WorkPermit;
 import com.stellarix.hse.entity.ZoneType;
 import com.stellarix.hse.repository.CompanyRepository;
 import com.stellarix.hse.repository.HabilitationRepository;
@@ -33,7 +32,6 @@ import com.stellarix.hse.repository.PpeItemResultRepository;
 import com.stellarix.hse.repository.PpeRequirementRepository;
 import com.stellarix.hse.repository.PpeVerificationLogRepository;
 import com.stellarix.hse.repository.SiteRepository;
-import com.stellarix.hse.repository.WorkPermitRepository;
 import com.stellarix.hse.repository.ZoneTypeRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -57,7 +55,6 @@ public class Config {
     private final HabilitationRepository habilitationRepo;
     private final CompanyRepository companyRepo;
     private final InductionRoleRepository roleRepo;
-    private final WorkPermitRepository workPermitRepo;
 
     @Bean
     CommandLineRunner commandLineRunner() {
@@ -73,40 +70,40 @@ public class Config {
             admin.setPassword(passwordEncoder.encode("motdepasse2002"));
             hseRepo.save(admin);
 
+            // ── Zone Types ───────────────────────────────────────────────────────
+            ZoneType bureau    = zoneType("Bureau");
+            ZoneType zoneIT    = zoneType("Zone IT");
+            ZoneType salleServ = zoneType("Salle serveurs");
+            ZoneType hTension  = zoneType("Haute tension");
+
             // ── Habilitations ────────────────────────────────────────────────────
             Habilitation h0 = hab("H0", "Hors tension",          "Non-électricien habilité à travailler hors tension");
             Habilitation b1 = hab("B1", "Basse tension travaux", "Électricien habilité pour travaux basse tension");
             Habilitation br = hab("BR", "Rechargement",           "Habilité à effectuer des rechargements et dépannages");
             Habilitation bc = hab("BC", "Consignation",           "Chargé de consignation basse tension");
 
-            // ── Zone Types (habilitations required per zone) ─────────────────────
-            ZoneType salleServ = zoneType("Salle serveurs", h0, b1);
-            ZoneType zoneIT    = zoneType("Zone IT", h0);
-            ZoneType bureau    = zoneType("Bureau");
-            ZoneType hTension  = zoneType("Haute tension", h0, b1, br, bc);
-
             // ── PPE Items ────────────────────────────────────────────────────────
-            PpeItem helmet  = ppeItemRepo.save(new PpeItem(null, "HELMET",         "Casque de sécurité"));
-            PpeItem glasses = ppeItemRepo.save(new PpeItem(null, "SAFETY_GLASSES", "Lunettes de protection"));
-            PpeItem vest    = ppeItemRepo.save(new PpeItem(null, "HIGH_VIS_VEST",  "Gilet haute visibilité"));
-            PpeItem gloves  = ppeItemRepo.save(new PpeItem(null, "GLOVES",         "Gants de protection"));
-            PpeItem shoes   = ppeItemRepo.save(new PpeItem(null, "SAFETY_SHOES",   "Chaussures de sécurité"));
+            PpeItem helmet  = ppeItemRepo.save(new PpeItem(null, "HELMET",         "Hard Hat"));
+            PpeItem glasses = ppeItemRepo.save(new PpeItem(null, "SAFETY_GLASSES", "Safety Glasses"));
+            PpeItem vest    = ppeItemRepo.save(new PpeItem(null, "HIGH_VIS_VEST",  "Hi-Vis Vest"));
+            PpeItem gloves  = ppeItemRepo.save(new PpeItem(null, "GLOVES",         "Gloves"));
+            PpeItem shoes   = ppeItemRepo.save(new PpeItem(null, "SAFETY_SHOES",   "Safety Shoes"));
 
             // ── Sites ────────────────────────────────────────────────────────────
-            Site alpha = site("Site A", -18.9168, 47.5361, salleServ);
-            Site beta  = site("Site B", -18.9000, 47.5500, zoneIT);
-            Site gamma = site("Site C", -18.9300, 47.5200, bureau);
-            Site delta = site("Site D", -18.9500, 47.5100, hTension);
+            Site alpha = site("DC Alpha", -18.9168, 47.5361, salleServ, List.of(h0, b1));
+            Site beta  = site("DC Beta",  -18.9000, 47.5500, zoneIT,    List.of(h0));
+            Site gamma = site("DC Gamma", -18.9300, 47.5200, bureau,    List.of());
+            Site delta = site("DC Delta", -18.9500, 47.5100, hTension,  List.of(h0, b1, br, bc));
 
-            // ── PPE Matrix (keyed by zone type, not by site) ─────────────────────
-            req(salleServ, "WORK",  helmet, glasses, vest, gloves, shoes);
-            req(salleServ, "VISIT", helmet, vest, shoes);
-            req(zoneIT,    "WORK",  helmet, glasses, vest, shoes);
-            req(zoneIT,    "VISIT", helmet, vest);
-            req(bureau,    "WORK",  helmet, glasses, vest, gloves, shoes);
-            req(bureau,    "VISIT", helmet, shoes);
-            req(hTension,  "WORK",  helmet, glasses, vest, gloves, shoes);
-            req(hTension,  "VISIT", helmet, vest, shoes);
+            // ── PPE Matrix ───────────────────────────────────────────────────────
+            req(alpha, "WORK",  helmet, glasses, vest, gloves, shoes);
+            req(alpha, "VISIT", helmet, vest, shoes);
+            req(beta,  "WORK",  helmet, glasses, vest, shoes);
+            req(beta,  "VISIT", helmet, vest);
+            req(gamma, "WORK",  helmet, glasses, vest, gloves, shoes);
+            req(gamma, "VISIT", helmet, shoes);
+            req(delta, "WORK",  helmet, glasses, vest, gloves, shoes);
+            req(delta, "VISIT", helmet, vest, shoes);
 
             // ── Companies ────────────────────────────────────────────────────────
             Company stellarix  = company("Stellarix");
@@ -152,18 +149,6 @@ public class Config {
             HseInduction david   = induction("David",    "Andrianarijaona",  "+261 34 00 00 13", "david.andrianarijaona@consultpro.com",consultpro, consultant);
             HseInduction nadia   = induction("Nadia",    "Randriamiharisoa", "+261 34 00 00 14", "nadia.randriamiharisoa@stellarix.com",stellarix,  respQualite,   h0);
             HseInduction pierre  = induction("Pierre",   "Rakotonirina",     "+261 34 00 00 15", "pierre.rakotonirina@volaelec.com",    volaElec,   techMaint,     h0, b1);
-
-            // ── Work Permits ─────────────────────────────────────────────────────
-            // Active permits: start in the past, end in the future (at(-n) = n days from now)
-            WorkPermit permitJean    = permit("STX-JRA-A01-2024-P01", jean,    alpha, at(5, 0, 0),  at(-7, 23, 59));
-            WorkPermit permitMarie   = permit("STX-MRZ-C02-2024-P02", marie,   gamma, at(3, 0, 0),  at(-5, 23, 59));
-            WorkPermit permitHugo    = permit("STX-HAN-B03-2024-P03", hugo,    beta,  at(7, 0, 0),  at(-3, 23, 59));
-            // Expired permit (both dates in the past)
-            WorkPermit permitThomas  = permit("STX-TRK-A04-2024-P04", thomas,  alpha, at(14, 0, 0), at(5, 23, 59));
-            // Revoked permit (set explicitly after save)
-            WorkPermit permitCamille = permit("STX-CRM-A05-2024-P05", camille, alpha, at(10, 0, 0), at(-10, 23, 59));
-            permitCamille.setStatus("REVOKED");
-            workPermitRepo.save(permitCamille);
 
             // ── Verification Logs ────────────────────────────────────────────────
             // Day -35
@@ -233,16 +218,9 @@ public class Config {
             validated(lucas,   "VISIT", alpha, at(1, 11, 0), false, items(helmet, vest, shoes),                  conf(0.96f, 0.93f, 0.95f));
             pending(david,     "VISIT", beta,  at(1, 15, 30));
 
-            // Day -2 — work permit linked entries
-            validatedWork(jean,    alpha, permitJean,   at(2, 7, 30), false, items(helmet, glasses, vest, gloves, shoes), conf(0.98f, 0.95f, 0.97f, 0.93f, 0.96f));
-            validatedWork(marie,   gamma, permitMarie,  at(2, 8,  0), false, items(helmet, glasses, vest, gloves, shoes), conf(0.97f, 0.93f, 0.95f, 0.91f, 0.97f));
-            rejectedWork( hugo,    beta,  permitHugo,   at(2, 9,  0), false, items(helmet, glasses, vest, shoes),         det(true, false, true, true),           conf(0.97f, 0.06f, 0.94f, 0.95f));
-            validatedWork(thomas,  alpha, permitThomas, at(2, 8, 45), false, items(helmet, glasses, vest, gloves, shoes), conf(0.96f, 0.92f, 0.94f, 0.90f, 0.97f));
-
             // Today
-            validatedWork(jean, alpha, permitJean, at(0, 7, 30), false, items(helmet, glasses, vest, gloves, shoes), conf(0.98f, 0.95f, 0.97f, 0.93f, 0.96f));
-            validatedWork(hugo, beta,  permitHugo, at(0, 8,  0), false, items(helmet, glasses, vest, shoes),         conf(0.97f, 0.91f, 0.94f, 0.95f));
-            validated(nicolas, "WORK",  beta,  at(0, 8, 20), false, items(helmet, glasses, vest, shoes),         conf(0.97f, 0.92f, 0.95f, 0.94f));
+            validated(jean,    "WORK",  alpha, at(0, 7, 30), false, items(helmet, glasses, vest, gloves, shoes), conf(0.98f, 0.95f, 0.97f, 0.93f, 0.96f));
+            validated(nicolas, "WORK",  beta,  at(0, 8,  0), false, items(helmet, glasses, vest, shoes),         conf(0.97f, 0.92f, 0.95f, 0.94f));
             validated(nadia,   "WORK",  gamma, at(0, 8, 15), false, items(helmet, glasses, vest, gloves, shoes), conf(0.96f, 0.93f, 0.94f, 0.91f, 0.97f));
             rejected(pierre,   "WORK",  gamma, at(0, 9,  0), false, items(helmet, glasses, vest, gloves, shoes), det(true,  false, true,  true,  true),  conf(0.97f, 0.06f, 0.95f, 0.92f, 0.96f));
             validated(antoine, "VISIT", alpha, at(0, 10, 0), false, items(helmet, vest, shoes),                  conf(0.96f, 0.94f, 0.95f));
@@ -256,10 +234,9 @@ public class Config {
 
     // ── Seed helpers ─────────────────────────────────────────────────────────────
 
-    private ZoneType zoneType(String label, Habilitation... habs) {
+    private ZoneType zoneType(String label) {
         ZoneType z = new ZoneType();
         z.setLabel(label);
-        z.setHabilitations(new ArrayList<>(List.of(habs)));
         return zoneTypeRepo.save(z);
     }
 
@@ -271,23 +248,13 @@ public class Config {
         return habilitationRepo.save(h);
     }
 
-    private WorkPermit permit(String id, HseInduction induction, Site site,
-                               LocalDateTime start, LocalDateTime end) {
-        WorkPermit p = new WorkPermit();
-        p.setPermitId(id);
-        p.setInduction(induction);
-        p.setSite(site);
-        p.setStartDatetime(start);
-        p.setEndDatetime(end);
-        return workPermitRepo.save(p);
-    }
-
-    private Site site(String name, double lat, double lon, ZoneType zoneType) {
+    private Site site(String name, double lat, double lon, ZoneType zoneType, List<Habilitation> habs) {
         Site s = new Site();
         s.setName(name);
         s.setLatitude(lat);
         s.setLongitude(lon);
         s.setZoneType(zoneType);
+        s.setHabilitations(habs);
         return siteRepo.save(s);
     }
 
@@ -318,10 +285,10 @@ public class Config {
         return inductionRepo.save(ind);
     }
 
-    private void req(ZoneType zoneType, String intent, PpeItem... ppeItems) {
+    private void req(Site site, String intent, PpeItem... ppeItems) {
         for (PpeItem item : ppeItems) {
             PpeRequirement r = new PpeRequirement();
-            r.setZoneType(zoneType);
+            r.setSite(site);
             r.setIntent(intent);
             r.setPpeItem(item);
             requirementRepo.save(r);
@@ -362,32 +329,6 @@ public class Config {
 
     private void pending(HseInduction induction, String intent, Site site, LocalDateTime capturedAt) {
         logRepo.save(buildLog(induction, intent, site, "PENDING", capturedAt, false));
-    }
-
-    private void validatedWork(HseInduction induction, Site site, WorkPermit permit,
-                                LocalDateTime capturedAt, boolean offline,
-                                PpeItem[] ppeItems, float[] confidences) {
-        PpeVerificationLog entry = buildLog(induction, "WORK", site, "VALIDATED", capturedAt, offline);
-        entry.setPermit(permit);
-        PpeVerificationLog saved = logRepo.save(entry);
-        for (int i = 0; i < ppeItems.length; i++) {
-            saveResult(saved, ppeItems[i], true, confidences[i]);
-        }
-    }
-
-    private void rejectedWork(HseInduction induction, Site site, WorkPermit permit,
-                               LocalDateTime capturedAt, boolean offline,
-                               PpeItem[] ppeItems, boolean[] detected, float[] confidences) {
-        PpeVerificationLog entry = buildLog(induction, "WORK", site, "REJECTED", capturedAt, offline);
-        entry.setPermit(permit);
-        PpeVerificationLog saved = logRepo.save(entry);
-        List<String> causes = new ArrayList<>();
-        for (int i = 0; i < ppeItems.length; i++) {
-            saveResult(saved, ppeItems[i], detected[i], confidences[i]);
-            if (!detected[i]) causes.add("MISSING_PPE:" + ppeItems[i].getCode());
-        }
-        saved.setRejectionCauses(causes);
-        logRepo.save(saved);
     }
 
     private PpeVerificationLog buildLog(HseInduction induction, String intent, Site site,

@@ -17,9 +17,11 @@ import com.stellarix.hse.dto.PpeRequirementRequest;
 import com.stellarix.hse.entity.PpeItem;
 import com.stellarix.hse.entity.PpeRequirement;
 import com.stellarix.hse.entity.Site;
+import com.stellarix.hse.entity.ZoneType;
 import com.stellarix.hse.repository.PpeItemRepository;
 import com.stellarix.hse.repository.PpeRequirementRepository;
 import com.stellarix.hse.repository.SiteRepository;
+import com.stellarix.hse.repository.ZoneTypeRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -30,34 +32,43 @@ public class PpeRequirementService {
 
     private final PpeRequirementRepository requirementRepository;
     private final SiteRepository siteRepository;
+    private final ZoneTypeRepository zoneTypeRepository;
     private final PpeItemRepository ppeItemRepository;
 
-    /** Mobile calls this on startup to cache the full PPE matrix across all sites. */
+    /** Mobile calls this on startup to cache the full PPE matrix across all sites (by zone type). */
     public List<Map<String, Object>> getMobileFlatCache() {
-        record Key(int siteId, String intent) {}
+        record Key(int zoneTypeId, String intent) {}
         return requirementRepository.findAll().stream()
                 .collect(Collectors.groupingBy(
-                        r -> new Key(r.getSite().getSiteId(), r.getIntent()),
+                        r -> new Key(r.getZoneType().getZoneTypeId(), r.getIntent()),
                         LinkedHashMap::new,
                         Collectors.mapping(r -> r.getPpeItem().getCode(), Collectors.toCollection(ArrayList::new))
                 ))
                 .entrySet().stream()
                 .map(e -> Map.<String, Object>of(
-                        "siteId", e.getKey().siteId(),
+                        "zoneTypeId", e.getKey().zoneTypeId(),
                         "intent", e.getKey().intent(),
                         "ppeCodes", e.getValue()
                 ))
                 .collect(Collectors.toList());
     }
 
-    /** Returns the full PPE matrix for a site grouped by intent — used by mobile on startup. */
+    /**
+     * Returns the full PPE matrix for a site grouped by intent — used by mobile on startup.
+     * Looks up the zone type from the site, then returns requirements for that zone type.
+     */
     public PpeMatrixResponse getMatrixForSite(Integer siteId) {
         Site site = siteRepository.findById(siteId)
                 .orElseThrow(() -> new EntityNotFoundException("Site not found: " + siteId));
 
-        List<PpeRequirement> siteReqs = requirementRepository.findBySite_SiteId(siteId);
+        if (site.getZoneType() == null) {
+            return new PpeMatrixResponse(siteId, site.getName(), Map.of());
+        }
 
-        Map<String, List<String>> requirements = siteReqs.stream()
+        List<PpeRequirement> zoneReqs = requirementRepository
+                .findByZoneType_ZoneTypeId(site.getZoneType().getZoneTypeId());
+
+        Map<String, List<String>> requirements = zoneReqs.stream()
                 .collect(Collectors.groupingBy(
                     PpeRequirement::getIntent,
                     Collectors.mapping(r -> r.getPpeItem().getCode(), Collectors.toList())
@@ -66,13 +77,13 @@ public class PpeRequirementService {
         return new PpeMatrixResponse(siteId, site.getName(), requirements);
     }
 
-    /** Backoffice: paginated listing with optional site and intent filters. */
-    public Page<PpeRequirement> getAllFiltered(Integer siteId, String intent, int page, int size) {
+    /** Backoffice: paginated listing with optional zone type and intent filters. */
+    public Page<PpeRequirement> getAllFiltered(Integer zoneTypeId, String intent, int page, int size) {
         PageRequest pageable = PageRequest.of(page, size, Sort.by("requirementId").ascending());
-        if (siteId != null && intent != null) {
-            return requirementRepository.findBySite_SiteIdAndIntent(siteId, intent, pageable);
-        } else if (siteId != null) {
-            return requirementRepository.findBySite_SiteId(siteId, pageable);
+        if (zoneTypeId != null && intent != null) {
+            return requirementRepository.findByZoneType_ZoneTypeIdAndIntent(zoneTypeId, intent, pageable);
+        } else if (zoneTypeId != null) {
+            return requirementRepository.findByZoneType_ZoneTypeId(zoneTypeId, pageable);
         } else if (intent != null) {
             return requirementRepository.findByIntent(intent, pageable);
         }
@@ -81,13 +92,13 @@ public class PpeRequirementService {
 
     @Transactional
     public PpeRequirement add(PpeRequirementRequest request) {
-        Site site = siteRepository.findById(request.getSiteId())
-                .orElseThrow(() -> new EntityNotFoundException("Site not found: " + request.getSiteId()));
+        ZoneType zoneType = zoneTypeRepository.findById(request.getZoneTypeId())
+                .orElseThrow(() -> new EntityNotFoundException("Zone type not found: " + request.getZoneTypeId()));
         PpeItem item = ppeItemRepository.findById(request.getPpeItemId())
                 .orElseThrow(() -> new EntityNotFoundException("PPE item not found: " + request.getPpeItemId()));
 
         PpeRequirement requirement = new PpeRequirement();
-        requirement.setSite(site);
+        requirement.setZoneType(zoneType);
         requirement.setIntent(request.getIntent());
         requirement.setPpeItem(item);
         return requirementRepository.save(requirement);

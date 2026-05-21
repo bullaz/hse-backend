@@ -30,6 +30,8 @@ public class PpeVerificationRequest {
 
     private boolean offline = false;
 
+    private String description;
+
     @NotNull
     @Pattern(regexp = "VALIDATED|REJECTED")
     private String status;

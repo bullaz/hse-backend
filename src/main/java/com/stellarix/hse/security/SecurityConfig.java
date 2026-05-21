@@ -86,7 +86,7 @@ public class SecurityConfig {
                 frontendUrl.substring(0, frontendUrl.length() - 1) : frontendUrl;
         
         configuration.setAllowedOrigins(List.of(origin));
-        configuration.setAllowedMethods(Arrays.asList("POST", "GET", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(Arrays.asList("POST", "GET", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept"));
         configuration.setAllowCredentials(true); // Allow credentials (cookies, authorization headers)
         configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));

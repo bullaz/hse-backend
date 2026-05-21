@@ -12,11 +12,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.stellarix.hse.dto.HseInductionRequest;
+import com.stellarix.hse.entity.Company;
+import com.stellarix.hse.entity.Habilitation;
 import com.stellarix.hse.entity.HseInduction;
+import com.stellarix.hse.entity.InductionRole;
+import com.stellarix.hse.repository.CompanyRepository;
 import com.stellarix.hse.repository.HabilitationRepository;
 import com.stellarix.hse.repository.HseInductionRepository;
+import com.stellarix.hse.repository.InductionRoleRepository;
 import com.stellarix.hse.repository.PpeVerificationLogRepository;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -26,6 +32,8 @@ public class HseInductionService {
     private final HseInductionRepository repository;
     private final PpeVerificationLogRepository logRepository;
     private final HabilitationRepository habilitationRepository;
+    private final CompanyRepository companyRepository;
+    private final InductionRoleRepository inductionRoleRepository;
 
     public Page<HseInduction> getAll(int page, int size) {
         return repository.findAll(PageRequest.of(page, size, Sort.by("registeredAt").descending()));
@@ -61,15 +69,65 @@ public class HseInductionService {
         if (repository.existsByFirstNameIgnoreCaseAndLastNameIgnoreCase(request.getFirstName().trim(), request.getLastName().trim())) {
             throw new IllegalArgumentException("Person already inducted: " + request.getFirstName() + " " + request.getLastName());
         }
+
+        Company company = null;
+        if (request.getCompanyId() != null) {
+            company = companyRepository.findById(request.getCompanyId()).orElse(null);
+        }
+
+        InductionRole role = null;
+        if (request.getRoleId() != null) {
+            role = inductionRoleRepository.findById(request.getRoleId()).orElse(null);
+        }
+
         HseInduction induction = new HseInduction();
         induction.setFirstName(request.getFirstName().trim());
         induction.setLastName(request.getLastName().trim());
         induction.setPhone(request.getPhone());
         induction.setEmail(request.getEmail());
         induction.setWork(request.getWork());
+        induction.setCompany(company);
+        induction.setRole(role);
         induction.setHabilitations(request.getHabilitationIds() != null && !request.getHabilitationIds().isEmpty()
                 ? habilitationRepository.findAllById(request.getHabilitationIds())
                 : new ArrayList<>());
+        return repository.save(induction);
+    }
+
+    @Transactional
+    public HseInduction update(UUID id, HseInductionRequest request) {
+        HseInduction induction = repository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Induction not found: " + id));
+
+        if (!induction.getFirstName().equalsIgnoreCase(request.getFirstName().trim()) ||
+                !induction.getLastName().equalsIgnoreCase(request.getLastName().trim())) {
+            if (repository.existsByFirstNameIgnoreCaseAndLastNameIgnoreCase(request.getFirstName().trim(), request.getLastName().trim())) {
+                throw new IllegalArgumentException("Person already inducted: " + request.getFirstName() + " " + request.getLastName());
+            }
+        }
+
+        induction.setFirstName(request.getFirstName().trim());
+        induction.setLastName(request.getLastName().trim());
+        induction.setPhone(request.getPhone());
+        induction.setEmail(request.getEmail());
+        induction.setWork(request.getWork());
+
+        Company company = null;
+        if (request.getCompanyId() != null) {
+            company = companyRepository.findById(request.getCompanyId()).orElse(null);
+        }
+        induction.setCompany(company);
+
+        InductionRole role = null;
+        if (request.getRoleId() != null) {
+            role = inductionRoleRepository.findById(request.getRoleId()).orElse(null);
+        }
+        induction.setRole(role);
+
+        induction.setHabilitations(request.getHabilitationIds() != null && !request.getHabilitationIds().isEmpty()
+                ? habilitationRepository.findAllById(request.getHabilitationIds())
+                : new ArrayList<>());
+
         return repository.save(induction);
     }
 

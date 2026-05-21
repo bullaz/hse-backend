@@ -22,4 +22,6 @@ public class WorkPermitRequest {
 
     @NotNull
     private LocalDateTime endDatetime;
+
+    private Integer permitTypeId;
 }

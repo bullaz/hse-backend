@@ -21,12 +21,14 @@ import com.stellarix.hse.entity.PpeItemResult;
 import com.stellarix.hse.entity.PpeVerificationLog;
 import com.stellarix.hse.entity.RejectedImage;
 import com.stellarix.hse.entity.Site;
+import com.stellarix.hse.entity.WorkPermit;
 import com.stellarix.hse.repository.HseInductionRepository;
 import com.stellarix.hse.repository.PpeItemRepository;
 import com.stellarix.hse.repository.PpeItemResultRepository;
 import com.stellarix.hse.repository.PpeVerificationLogRepository;
 import com.stellarix.hse.repository.RejectedImageRepository;
 import com.stellarix.hse.repository.SiteRepository;
+import com.stellarix.hse.repository.WorkPermitRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +45,7 @@ public class PpeVerificationService {
     private final RejectedImageRepository imageRepository;
     private final SiteRepository siteRepository;
     private final HseInductionRepository inductionRepository;
+    private final WorkPermitRepository workPermitRepository;
 
     @Transactional
     public PpeVerificationLog submit(PpeVerificationRequest request) {
@@ -66,6 +69,16 @@ public class PpeVerificationService {
         log.setCapturedAt(request.getCapturedAt());
         log.setOffline(request.isOffline());
         log.setSyncedAt(request.isOffline() ? LocalDateTime.now() : null);
+        log.setDescription(request.getDescription());
+
+        // Auto-link active work permit for WORK intent submissions
+        if ("WORK".equals(request.getIntent())) {
+            List<WorkPermit> activePermits = workPermitRepository.findActiveByInductionAndSite(
+                    induction.getInductionId(), site.getSiteId(), LocalDateTime.now());
+            if (!activePermits.isEmpty()) {
+                log.setPermit(activePermits.get(0));
+            }
+        }
 
         PpeVerificationLog saved = logRepository.save(log);
 
@@ -193,6 +206,10 @@ public class PpeVerificationService {
                 log.getInduction().getFirstName(),
                 log.getInduction().getLastName());
 
+        String permitId = log.getPermit() != null ? log.getPermit().getPermitId() : null;
+        String permitTypeLabel = (log.getPermit() != null && log.getPermit().getPermitType() != null)
+                ? log.getPermit().getPermitType().getLabel() : null;
+
         return VerificationLogResponse.builder()
                 .logId(log.getLogId())
                 .induction(inductionDto)
@@ -206,6 +223,9 @@ public class PpeVerificationService {
                 .itemResults(items)
                 .rejectionCauses(log.getRejectionCauses())
                 .certifiedAt(log.getCertifiedAt())
+                .permitId(permitId)
+                .permitTypeLabel(permitTypeLabel)
+                .description(log.getDescription())
                 .build();
     }
 }
