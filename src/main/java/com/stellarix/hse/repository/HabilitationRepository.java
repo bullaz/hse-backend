@@ -7,4 +7,5 @@ import com.stellarix.hse.entity.Habilitation;
 
 @Repository
 public interface HabilitationRepository extends JpaRepository<Habilitation, Integer> {
+    boolean existsByCodeIgnoreCase(String code);
 }

@@ -32,7 +32,7 @@ public class PermitTypeService {
     public PermitTypeResponse create(PermitTypeRequest request) {
         String code = request.getCode().trim().toUpperCase();
         if (permitTypeRepository.existsByCodeIgnoreCase(code)) {
-            throw new IllegalArgumentException("Permit type code already exists: " + code);
+            throw new IllegalStateException("Duplicate permit type code");
         }
         PermitType pt = new PermitType();
         pt.setCode(code);

@@ -31,6 +31,9 @@ public class SiteService {
 
     @Transactional
     public Site create(SiteRequest request) {
+        if (repository.existsByNameIgnoreCase(request.getName().trim())) {
+            throw new IllegalStateException("Duplicate site name");
+        }
         Site site = new Site();
         applyRequest(site, request);
         return repository.save(site);
@@ -38,6 +41,9 @@ public class SiteService {
 
     @Transactional
     public Site update(Integer id, SiteRequest request) {
+        if (repository.existsByNameIgnoreCaseAndSiteIdNot(request.getName().trim(), id)) {
+            throw new IllegalStateException("Duplicate site name");
+        }
         Site site = findById(id);
         applyRequest(site, request);
         return repository.save(site);

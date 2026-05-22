@@ -24,8 +24,12 @@ public class HabilitationService {
 
     @Transactional
     public Habilitation create(HabilitationRequest request) {
+        String code = request.getCode().trim().toUpperCase();
+        if (repository.existsByCodeIgnoreCase(code)) {
+            throw new IllegalStateException("Duplicate habilitation code");
+        }
         Habilitation habilitation = new Habilitation();
-        habilitation.setCode(request.getCode().trim().toUpperCase());
+        habilitation.setCode(code);
         habilitation.setLabel(request.getLabel());
         habilitation.setDescription(request.getDescription());
         return repository.save(habilitation);

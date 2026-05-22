@@ -97,6 +97,11 @@ public class PpeRequirementService {
         PpeItem item = ppeItemRepository.findById(request.getPpeItemId())
                 .orElseThrow(() -> new EntityNotFoundException("PPE item not found: " + request.getPpeItemId()));
 
+        if (requirementRepository.existsByZoneType_ZoneTypeIdAndIntentAndPpeItem_PpeItemId(
+                request.getZoneTypeId(), request.getIntent(), request.getPpeItemId())) {
+            throw new IllegalStateException("Duplicate PPE requirement");
+        }
+
         PpeRequirement requirement = new PpeRequirement();
         requirement.setZoneType(zoneType);
         requirement.setIntent(request.getIntent());

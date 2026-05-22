@@ -10,4 +10,6 @@ import com.stellarix.hse.entity.Site;
 @Repository
 public interface SiteRepository extends JpaRepository<Site, Integer> {
     Optional<Site> findByName(String name);
+    boolean existsByNameIgnoreCaseAndSiteIdNot(String name, Integer siteId);
+    boolean existsByNameIgnoreCase(String name);
 }
