@@ -9,4 +9,5 @@ public class PpeItemResultRequest {
     private String ppeItemCode;
     private boolean detected;
     private Float confidence;
+    private boolean wrongType;
 }

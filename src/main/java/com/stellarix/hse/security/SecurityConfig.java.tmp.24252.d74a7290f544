@@ -84,8 +84,8 @@ public class SecurityConfig {
     protected CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration().applyPermitDefaultValues();
 
-        String origin = frontendUrl.trim();
-        if (origin.endsWith("/")) origin = origin.substring(0, origin.length() - 1);
+        String origin = frontendUrl.endsWith("/") ?
+                frontendUrl.substring(0, frontendUrl.length() - 1) : frontendUrl;
         
         configuration.setAllowedOrigins(List.of(origin));
         configuration.setAllowedMethods(Arrays.asList("POST", "GET", "PUT", "PATCH", "DELETE", "OPTIONS"));

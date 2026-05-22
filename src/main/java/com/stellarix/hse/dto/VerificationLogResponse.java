@@ -29,6 +29,7 @@ public class VerificationLogResponse {
     private LocalDateTime certifiedAt;
     private String permitId;
     private String permitTypeLabel;
+    private boolean hasCompositeImage;
 
     @Data
     @AllArgsConstructor

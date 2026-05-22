@@ -22,6 +22,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import com.stellarix.hse.entity.Company;
 import com.stellarix.hse.entity.Habilitation;
 import com.stellarix.hse.entity.Hse;
+import com.stellarix.hse.entity.VerificationCompositeImage;
 import com.stellarix.hse.entity.HseInduction;
 import com.stellarix.hse.entity.InductionRole;
 import com.stellarix.hse.entity.PpeItem;
@@ -40,6 +41,7 @@ import com.stellarix.hse.repository.PpeItemResultRepository;
 import com.stellarix.hse.repository.PpeRequirementRepository;
 import com.stellarix.hse.repository.PpeVerificationLogRepository;
 import com.stellarix.hse.repository.SiteRepository;
+import com.stellarix.hse.repository.VerificationCompositeImageRepository;
 import com.stellarix.hse.repository.ZoneTypeRepository;
 
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -65,7 +67,7 @@ public class Config {
     private final HabilitationRepository habilitationRepo;
     private final CompanyRepository companyRepo;
     private final InductionRoleRepository roleRepo;
-    private final JdbcTemplate jdbc;
+    private final VerificationCompositeImageRepository compositeImageRepo;
 
     @Bean
     CommandLineRunner commandLineRunner() {
@@ -141,13 +143,12 @@ public class Config {
             PpeVerificationLog jeanLog = validated(jean, "WORK", alpha, at(2, 8, 0), false,
                     items(helmet, glasses, vest, gloves, shoes),
                     conf(0.97f, 0.94f, 0.96f, 0.92f, 0.95f));
-            // Plain JDBC insert — avoids @MapsId/detached-entity issues in a no-outer-transaction context
-            jdbc.update(
-                "INSERT INTO hse_schema.verification_composite_image (log_id, image_data, expires_at) VALUES (?, ?, ?)",
-                jeanLog.getLogId(),
-                fakeCompositeJpeg(),
-                java.sql.Timestamp.valueOf(LocalDateTime.now().plusHours(48))
-            );
+            // getReferenceById gives a managed proxy — avoids Hibernate cascade-persisting jeanLog again
+            VerificationCompositeImage ci = new VerificationCompositeImage();
+            ci.setVerificationLog(logRepo.getReferenceById(jeanLog.getLogId()));
+            ci.setImageData(fakeCompositeJpeg());
+            ci.setExpiresAt(LocalDateTime.now().plusHours(48));
+            compositeImageRepo.save(ci);
 
             // 2 — Rejected WORK (missing glasses)
             rejected(sophie,  "WORK",  beta,  at(1, 9, 0), false,

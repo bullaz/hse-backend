@@ -1,14 +1,23 @@
 package com.stellarix.hse.service;
 
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import javax.imageio.ImageIO;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +30,7 @@ import com.stellarix.hse.entity.PpeItemResult;
 import com.stellarix.hse.entity.PpeVerificationLog;
 import com.stellarix.hse.entity.RejectedImage;
 import com.stellarix.hse.entity.Site;
+import com.stellarix.hse.entity.VerificationCompositeImage;
 import com.stellarix.hse.entity.WorkPermit;
 import com.stellarix.hse.repository.HseInductionRepository;
 import com.stellarix.hse.repository.PpeItemRepository;
@@ -28,6 +38,7 @@ import com.stellarix.hse.repository.PpeItemResultRepository;
 import com.stellarix.hse.repository.PpeVerificationLogRepository;
 import com.stellarix.hse.repository.RejectedImageRepository;
 import com.stellarix.hse.repository.SiteRepository;
+import com.stellarix.hse.repository.VerificationCompositeImageRepository;
 import com.stellarix.hse.repository.WorkPermitRepository;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -43,9 +54,11 @@ public class PpeVerificationService {
     private final PpeItemRepository ppeItemRepository;
     private final PpeItemResultRepository resultRepository;
     private final RejectedImageRepository imageRepository;
+    private final VerificationCompositeImageRepository compositeImageRepository;
     private final SiteRepository siteRepository;
     private final HseInductionRepository inductionRepository;
     private final WorkPermitRepository workPermitRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Transactional
     public PpeVerificationLog submit(PpeVerificationRequest request) {
@@ -97,13 +110,80 @@ public class PpeVerificationService {
         if ("REJECTED".equals(request.getStatus())) {
             List<String> causes = request.getItemResults().stream()
                     .filter(r -> !r.isDetected())
-                    .map(r -> "MISSING_PPE:" + r.getPpeItemCode())
+                    .map(r -> (r.isWrongType() ? "WRONG_TYPE:" : "MISSING_PPE:") + r.getPpeItemCode())
                     .toList();
             saved.setRejectionCauses(causes);
             logRepository.save(saved);
         }
 
+        // Broadcast new log to all subscribed frontend clients (real-time update)
+        messagingTemplate.convertAndSend("/topic/verifications", toResponse(saved));
+
         return saved;
+    }
+
+    /** Saves side-by-side composite image (original | annotated) for any verification log. */
+    @Transactional
+    public void saveCompositeImage(UUID logId, byte[] originalBytes, byte[] annotatedBytes) throws IOException {
+        PpeVerificationLog log = logRepository.findById(logId)
+                .orElseThrow(() -> new EntityNotFoundException("Verification log not found: " + logId));
+
+        byte[] composite = buildSideBySide(originalBytes, annotatedBytes);
+
+        VerificationCompositeImage img = new VerificationCompositeImage();
+        img.setLogId(logId);
+        img.setVerificationLog(log);
+        img.setImageData(composite);
+        img.setExpiresAt(log.getCapturedAt().plusHours(48));
+        compositeImageRepository.save(img);
+    }
+
+    /** Returns the composite image bytes for a log, or empty if not yet uploaded. */
+    public byte[] getCompositeImage(UUID logId) {
+        return compositeImageRepository.findById(logId)
+                .map(VerificationCompositeImage::getImageData)
+                .orElseThrow(() -> new EntityNotFoundException("No composite image for log: " + logId));
+    }
+
+    public boolean hasCompositeImage(UUID logId) {
+        return compositeImageRepository.existsByVerificationLog_LogId(logId);
+    }
+
+    /** Purges expired composite images every hour. */
+    @Scheduled(fixedRate = 3_600_000)
+    @Transactional
+    public void purgeExpiredComposites() {
+        int deleted = compositeImageRepository.deleteExpired(LocalDateTime.now());
+        if (deleted > 0) log.info("Purged {} expired composite images", deleted);
+    }
+
+    private byte[] buildSideBySide(byte[] leftBytes, byte[] rightBytes) throws IOException {
+        System.setProperty("java.awt.headless", "true");
+        BufferedImage left = ImageIO.read(new ByteArrayInputStream(leftBytes));
+        BufferedImage right = ImageIO.read(new ByteArrayInputStream(rightBytes));
+        if (left == null || right == null) throw new IOException("Could not decode one or both images");
+
+        // Normalize right image height to match left
+        int h = left.getHeight();
+        int rw = (int) ((double) right.getWidth() / right.getHeight() * h);
+        BufferedImage scaledRight = new BufferedImage(rw, h, BufferedImage.TYPE_INT_RGB);
+        Graphics2D gr = scaledRight.createGraphics();
+        gr.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        gr.drawImage(right, 0, 0, rw, h, null);
+        gr.dispose();
+
+        final int gap = 4;
+        BufferedImage composite = new BufferedImage(left.getWidth() + gap + rw, h, BufferedImage.TYPE_INT_RGB);
+        Graphics2D gc = composite.createGraphics();
+        gc.setColor(java.awt.Color.DARK_GRAY);
+        gc.fillRect(0, 0, composite.getWidth(), h);
+        gc.drawImage(left, 0, 0, null);
+        gc.drawImage(scaledRight, left.getWidth() + gap, 0, null);
+        gc.dispose();
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ImageIO.write(composite, "jpg", out);
+        return out.toByteArray();
     }
 
     /**
@@ -157,7 +237,10 @@ public class PpeVerificationService {
         } else {
             logs = logRepository.findByCapturedAtBetween(from, to, pageable);
         }
-        return logs.map(this::toResponse);
+        // Single query for composite image flags (avoids N+1)
+        java.util.Set<UUID> withImage = compositeImageRepository.findExistingLogIds(
+                logs.stream().map(PpeVerificationLog::getLogId).toList());
+        return logs.map(l -> toResponse(l, withImage));
     }
 
     /** Returns all logs matching the filters as a flat list — used for PDF export. */
@@ -191,7 +274,13 @@ public class PpeVerificationService {
                 .toList();
     }
 
+    /** Used for single-log responses (submit, WebSocket broadcast). */
     public VerificationLogResponse toResponse(PpeVerificationLog log) {
+        return toResponse(log, null);
+    }
+
+    /** Batch-aware variant: pass a pre-fetched set to avoid N+1 queries. */
+    public VerificationLogResponse toResponse(PpeVerificationLog log, java.util.Set<UUID> withImageIds) {
         List<VerificationLogResponse.ItemResultDto> items = log.getItemResults() == null ? List.of() :
                 log.getItemResults().stream()
                     .map(r -> new VerificationLogResponse.ItemResultDto(
@@ -210,6 +299,10 @@ public class PpeVerificationService {
         String permitTypeLabel = (log.getPermit() != null && log.getPermit().getPermitType() != null)
                 ? log.getPermit().getPermitType().getLabel() : null;
 
+        boolean hasImage = withImageIds != null
+                ? withImageIds.contains(log.getLogId())
+                : compositeImageRepository.existsByVerificationLog_LogId(log.getLogId());
+
         return VerificationLogResponse.builder()
                 .logId(log.getLogId())
                 .induction(inductionDto)
@@ -226,6 +319,7 @@ public class PpeVerificationService {
                 .permitId(permitId)
                 .permitTypeLabel(permitTypeLabel)
                 .description(log.getDescription())
+                .hasCompositeImage(hasImage)
                 .build();
     }
 }

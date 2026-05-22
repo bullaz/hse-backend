@@ -62,6 +62,28 @@ public class PpeVerificationController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
+    /**
+     * Mobile uploads original + annotated images for ANY verification.
+     * Server creates side-by-side composite and stores it with 48h TTL.
+     */
+    @PostMapping("/{logId}/images")
+    public ResponseEntity<Void> uploadImages(
+            @PathVariable UUID logId,
+            @RequestPart("original") MultipartFile original,
+            @RequestPart("annotated") MultipartFile annotated) throws IOException {
+        service.saveCompositeImage(logId, original.getBytes(), annotated.getBytes());
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    /** Returns the composite image (JPEG) for display in the backoffice log viewer. */
+    @GetMapping(value = "/{logId}/composite-image", produces = MediaType.IMAGE_JPEG_VALUE)
+    public ResponseEntity<byte[]> getCompositeImage(@PathVariable UUID logId) {
+        byte[] data = service.getCompositeImage(logId);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CACHE_CONTROL, "no-store")
+                .body(data);
+    }
+
     /** Mobile batch-syncs offline verification results when connectivity is restored. */
     @PostMapping("/sync")
     public ResponseEntity<Void> sync(@Valid @RequestBody List<@Valid PpeVerificationRequest> pending) {
