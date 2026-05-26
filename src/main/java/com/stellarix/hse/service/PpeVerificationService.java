@@ -41,7 +41,9 @@ import com.stellarix.hse.repository.SiteRepository;
 import com.stellarix.hse.repository.VerificationCompositeImageRepository;
 import com.stellarix.hse.repository.WorkPermitRepository;
 
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -59,6 +61,9 @@ public class PpeVerificationService {
     private final HseInductionRepository inductionRepository;
     private final WorkPermitRepository workPermitRepository;
     private final SimpMessagingTemplate messagingTemplate;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Transactional
     public PpeVerificationLog submit(PpeVerificationRequest request) {
@@ -135,7 +140,7 @@ public class PpeVerificationService {
         img.setVerificationLog(log);
         img.setImageData(composite);
         img.setExpiresAt(log.getCapturedAt().plusHours(48));
-        compositeImageRepository.save(img);
+        entityManager.persist(img);
     }
 
     /** Returns the composite image bytes for a log, or empty if not yet uploaded. */

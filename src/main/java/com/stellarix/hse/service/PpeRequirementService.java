@@ -35,22 +35,29 @@ public class PpeRequirementService {
     private final ZoneTypeRepository zoneTypeRepository;
     private final PpeItemRepository ppeItemRepository;
 
-    /** Mobile calls this on startup to cache the full PPE matrix across all sites (by zone type). */
+    /** Mobile calls this on startup to cache the full PPE matrix keyed by siteId. */
     public List<Map<String, Object>> getMobileFlatCache() {
-        record Key(int zoneTypeId, String intent) {}
-        return requirementRepository.findAll().stream()
-                .collect(Collectors.groupingBy(
-                        r -> new Key(r.getZoneType().getZoneTypeId(), r.getIntent()),
-                        LinkedHashMap::new,
-                        Collectors.mapping(r -> r.getPpeItem().getCode(), Collectors.toCollection(ArrayList::new))
-                ))
-                .entrySet().stream()
-                .map(e -> Map.<String, Object>of(
-                        "zoneTypeId", e.getKey().zoneTypeId(),
-                        "intent", e.getKey().intent(),
-                        "ppeCodes", e.getValue()
-                ))
-                .collect(Collectors.toList());
+        List<Site> sites = siteRepository.findAll();
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Site site : sites) {
+            if (site.getZoneType() == null) continue;
+            int zoneTypeId = site.getZoneType().getZoneTypeId();
+            record Key(String intent) {}
+            Map<Key, List<String>> byIntent = requirementRepository
+                    .findByZoneType_ZoneTypeId(zoneTypeId).stream()
+                    .collect(Collectors.groupingBy(
+                            r -> new Key(r.getIntent()),
+                            Collectors.mapping(r -> r.getPpeItem().getCode(), Collectors.toCollection(ArrayList::new))
+                    ));
+            for (var entry : byIntent.entrySet()) {
+                result.add(Map.of(
+                        "siteId",   site.getSiteId(),
+                        "intent",   entry.getKey().intent(),
+                        "ppeCodes", entry.getValue()
+                ));
+            }
+        }
+        return result;
     }
 
     /**

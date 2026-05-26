@@ -1,17 +1,7 @@
 package com.stellarix.hse.configuration;
 
-import java.awt.BasicStroke;
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
-import javax.imageio.ImageIO;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
@@ -25,9 +15,7 @@ import com.stellarix.hse.entity.Hse;
 import com.stellarix.hse.entity.HseInduction;
 import com.stellarix.hse.entity.InductionRole;
 import com.stellarix.hse.entity.PpeItem;
-import com.stellarix.hse.entity.PpeItemResult;
 import com.stellarix.hse.entity.PpeRequirement;
-import com.stellarix.hse.entity.PpeVerificationLog;
 import com.stellarix.hse.entity.Site;
 import com.stellarix.hse.entity.ZoneType;
 import com.stellarix.hse.repository.CompanyRepository;
@@ -36,13 +24,9 @@ import com.stellarix.hse.repository.HseInductionRepository;
 import com.stellarix.hse.repository.HseRepository;
 import com.stellarix.hse.repository.InductionRoleRepository;
 import com.stellarix.hse.repository.PpeItemRepository;
-import com.stellarix.hse.repository.PpeItemResultRepository;
 import com.stellarix.hse.repository.PpeRequirementRepository;
-import com.stellarix.hse.repository.PpeVerificationLogRepository;
 import com.stellarix.hse.repository.SiteRepository;
 import com.stellarix.hse.repository.ZoneTypeRepository;
-
-import org.springframework.jdbc.core.JdbcTemplate;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -59,18 +43,15 @@ public class Config {
     private final PpeItemRepository ppeItemRepo;
     private final PpeRequirementRepository requirementRepo;
     private final HseInductionRepository inductionRepo;
-    private final PpeVerificationLogRepository logRepo;
-    private final PpeItemResultRepository itemResultRepo;
     private final ZoneTypeRepository zoneTypeRepo;
     private final HabilitationRepository habilitationRepo;
     private final CompanyRepository companyRepo;
     private final InductionRoleRepository roleRepo;
-    private final JdbcTemplate jdbc;
 
     @Bean
     CommandLineRunner commandLineRunner() {
         return args -> {
-            if (hseRepo.count() > 0 || logRepo.count() > 0) {
+            if (hseRepo.count() > 0) {
                 log.info("[Seed] Data already present — skipping.");
                 return;
             }
@@ -81,7 +62,7 @@ public class Config {
             admin.setNom("Mahosy");
             admin.setPrenom("Anderson");
             admin.setEmail("andersonmahosi@gmail.com");
-            admin.setUsername("andersonmahosi");
+            admin.setUsername("anderson");
             admin.setPassword(passwordEncoder.encode("motdepasse2002"));
             hseRepo.save(admin);
 
@@ -105,10 +86,10 @@ public class Config {
             PpeItem shoes   = ppeItemRepo.save(new PpeItem(null, "SAFETY_SHOES",   "Chaussures de sécurité"));
 
             // ── Sites ────────────────────────────────────────────────────────────
-            Site alpha = site("Site A", -18.9168, 47.5361, salleServ);
-            Site beta  = site("Site B", -18.9000, 47.5500, zoneIT);
-            Site gamma = site("Site C", -18.9300, 47.5200, bureau);
-                         site("Site D", -18.9500, 47.5100, hTension);
+            site("Site A", -18.9168, 47.5361, salleServ);
+            site("Site B", -18.9000, 47.5500, zoneIT);
+            site("Site C", -18.9300, 47.5200, bureau);
+            site("Site D", -18.9500, 47.5100, hTension);
 
             // ── PPE Matrix ───────────────────────────────────────────────────────
             req(salleServ, "WORK",  helmet, glasses, vest, gloves, shoes);
@@ -129,39 +110,15 @@ public class Config {
             InductionRole visiteurAcc = role("Visiteur accrédité");
 
             // ── Inductions (3) ───────────────────────────────────────────────────
-            HseInduction jean   = induction("Jean",   "Rakotomalala", "+261 34 00 00 01",
+            induction("Jean",   "Rakotomalala",  "+261 34 00 00 01",
                     "jean.rakotomalala@stellarix.com",  stellarix, electSenior, h0, b1, br, bc);
-            HseInduction sophie = induction("Sophie", "Rasoamahenina", "+261 34 00 00 02",
+            induction("Sophie", "Rasoamahenina", "+261 34 00 00 02",
                     "sophie.rasoamahenina@technet.com", technet,   techReseau,  h0, b1);
-            HseInduction luc    = induction("Luc",    "Randriamihaja", "+261 34 00 00 03",
+            induction("Luc",    "Randriamihaja",  "+261 34 00 00 03",
                     "luc.randriamihaja@stellarix.com",  stellarix, visiteurAcc);
 
-            // ── Verification Logs (3) ────────────────────────────────────────────
-            // 1 — Validated WORK (all PPE present) + composite image for UI demo
-            PpeVerificationLog jeanLog = validated(jean, "WORK", alpha, at(2, 8, 0), false,
-                    items(helmet, glasses, vest, gloves, shoes),
-                    conf(0.97f, 0.94f, 0.96f, 0.92f, 0.95f));
-            // Plain JDBC insert — avoids @MapsId/detached-entity issues in a no-outer-transaction context
-            jdbc.update(
-                "INSERT INTO hse_schema.verification_composite_image (log_id, image_data, expires_at) VALUES (?, ?, ?)",
-                jeanLog.getLogId(),
-                fakeCompositeJpeg(),
-                java.sql.Timestamp.valueOf(LocalDateTime.now().plusHours(48))
-            );
-
-            // 2 — Rejected WORK (missing glasses)
-            rejected(sophie,  "WORK",  beta,  at(1, 9, 0), false,
-                    items(helmet, glasses, vest, shoes),
-                    det(true, false, true, true),
-                    conf(0.96f, 0.06f, 0.94f, 0.93f));
-
-            // 3 — Validated VISIT
-            validated(luc,    "VISIT", gamma, at(0, 10, 0), false,
-                    items(helmet, shoes),
-                    conf(0.95f, 0.94f));
-
-            log.info("[Seed] Done — {} sites, {} PPE items, {} inductions, {} logs.",
-                    siteRepo.count(), ppeItemRepo.count(), inductionRepo.count(), logRepo.count());
+            log.info("[Seed] Done — {} sites, {} PPE items, {} inductions.",
+                    siteRepo.count(), ppeItemRepo.count(), inductionRepo.count());
         };
     }
 
@@ -228,112 +185,4 @@ public class Config {
         }
     }
 
-    private LocalDateTime at(int daysAgo, int hour, int minute) {
-        return LocalDateTime.now()
-                .minusDays(daysAgo)
-                .withHour(hour).withMinute(minute).withSecond(0).withNano(0);
-    }
-
-    private PpeItem[]  items(PpeItem... ppeItems) { return ppeItems; }
-    private float[]    conf(float... vals)         { return vals; }
-    private boolean[]  det(boolean... vals)        { return vals; }
-
-    private PpeVerificationLog validated(HseInduction induction, String intent, Site site,
-                                          LocalDateTime capturedAt, boolean offline,
-                                          PpeItem[] ppeItems, float[] confidences) {
-        PpeVerificationLog saved = logRepo.save(buildLog(induction, intent, site, "VALIDATED", capturedAt, offline));
-        for (int i = 0; i < ppeItems.length; i++) {
-            saveResult(saved, ppeItems[i], true, confidences[i]);
-        }
-        return saved;
-    }
-
-    private void rejected(HseInduction induction, String intent, Site site,
-                           LocalDateTime capturedAt, boolean offline,
-                           PpeItem[] ppeItems, boolean[] detected, float[] confidences) {
-        PpeVerificationLog saved = logRepo.save(buildLog(induction, intent, site, "REJECTED", capturedAt, offline));
-        List<String> causes = new ArrayList<>();
-        for (int i = 0; i < ppeItems.length; i++) {
-            saveResult(saved, ppeItems[i], detected[i], confidences[i]);
-            if (!detected[i]) causes.add("MISSING_PPE:" + ppeItems[i].getCode());
-        }
-        saved.setRejectionCauses(causes);
-        logRepo.save(saved);
-    }
-
-    private PpeVerificationLog buildLog(HseInduction induction, String intent, Site site,
-                                         String status, LocalDateTime capturedAt, boolean offline) {
-        PpeVerificationLog entry = new PpeVerificationLog();
-        entry.setLogId(UUID.randomUUID());
-        entry.setInduction(induction);
-        entry.setIntent(intent);
-        entry.setSite(site);
-        entry.setStatus(status);
-        entry.setCapturedAt(capturedAt);
-        entry.setOffline(offline);
-        return entry;
-    }
-
-    private void saveResult(PpeVerificationLog saved, PpeItem item,
-                             boolean detected, float confidence) {
-        PpeItemResult r = new PpeItemResult();
-        r.setVerificationLog(saved);
-        r.setPpeItem(item);
-        r.setDetected(detected);
-        r.setConfidence(confidence);
-        itemResultRepo.save(r);
-    }
-
-    private byte[] fakeCompositeJpeg() throws Exception {
-        int w = 640, h = 360, half = w / 2;
-        BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
-        Graphics2D g = img.createGraphics();
-        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-        // Left panel — simulated original photo
-        g.setColor(new Color(55, 65, 75));
-        g.fillRect(0, 0, half, h);
-        g.setColor(new Color(95, 85, 78));
-        g.fillRect(half / 2 - 45, 30, 90, 300);  // person silhouette
-
-        // Right panel — annotated
-        g.setColor(new Color(45, 55, 65));
-        g.fillRect(half, 0, half, h);
-        g.setColor(new Color(85, 75, 68));
-        g.fillRect(half + half / 2 - 45, 30, 90, 300);
-
-        // Bounding boxes + labels on right panel
-        int ox = half + half / 2 - 45;
-        int[][] boxes  = { {ox,      30, 90,  65}, {ox + 10, 95,  70, 45},
-                           {ox - 5, 140, 100, 110}, {ox,     250, 42, 45},
-                           {ox + 48, 250, 42, 45} };
-        Color[]  cols  = { Color.YELLOW, new Color(0, 220, 0), Color.CYAN,
-                           Color.ORANGE, Color.ORANGE };
-        String[] lbls  = { "HELMET 97%", "GLASSES 94%", "VEST 96%", "GLOVES 92%", "SHOES 95%" };
-
-        g.setFont(new Font("SansSerif", Font.BOLD, 10));
-        for (int i = 0; i < boxes.length; i++) {
-            g.setColor(cols[i]);
-            g.setStroke(new BasicStroke(2));
-            g.drawRect(boxes[i][0], boxes[i][1], boxes[i][2], boxes[i][3]);
-            g.setColor(new Color(cols[i].getRed(), cols[i].getGreen(), cols[i].getBlue(), 160));
-            g.fillRect(boxes[i][0], boxes[i][1] - 14, lbls[i].length() * 7, 14);
-            g.setColor(Color.BLACK);
-            g.drawString(lbls[i], boxes[i][0] + 2, boxes[i][1] - 3);
-        }
-
-        // Divider + panel labels
-        g.setStroke(new BasicStroke(2));
-        g.setColor(new Color(200, 200, 200));
-        g.drawLine(half, 0, half, h);
-        g.setFont(new Font("SansSerif", Font.BOLD, 13));
-        g.setColor(new Color(220, 220, 220));
-        g.drawString("Original", 8, 20);
-        g.drawString("Annotated — VALIDATED", half + 8, 20);
-
-        g.dispose();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ImageIO.write(img, "jpg", baos);
-        return baos.toByteArray();
-    }
 }

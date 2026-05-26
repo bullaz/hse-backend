@@ -59,6 +59,8 @@ public class SecurityConfig {
                 .requestMatchers("/hse/ws/**").permitAll()
                 // Mobile and backoffice — read-only lookups (no auth required)
                 .requestMatchers(HttpMethod.GET, "/hse/sites", "/hse/ppe-items", "/hse/ppe-matrix", "/hse/ppe-matrix/mobile-cache", "/hse/inductions/verify", "/hse/inductions/names", "/hse/zone-types", "/hse/habilitations", "/hse/permits/verify").permitAll()
+                // Mobile — cloud inference (no auth required, image never stored here)
+                .requestMatchers(HttpMethod.POST, "/hse/verifications/analyze").permitAll()
                 // Mobile — submit verification + offline sync + rejected image upload + certify
                 .requestMatchers(HttpMethod.POST, "/hse/verifications", "/hse/verifications/sync").permitAll()
                 .requestMatchers(HttpMethod.POST, "/hse/verifications/*/image").permitAll()

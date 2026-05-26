@@ -26,8 +26,14 @@ import com.stellarix.hse.dto.PpeVerificationRequest;
 import com.stellarix.hse.dto.TopWorkerStatDto;
 import com.stellarix.hse.dto.VerificationLogResponse;
 import com.stellarix.hse.service.PdfService;
+import com.stellarix.hse.service.PpeInferenceService;
 import com.stellarix.hse.service.PpeVerificationService;
 import com.stellarix.hse.service.SiteService;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Base64;
+import java.util.Map;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +48,41 @@ public class PpeVerificationController {
     private final PpeVerificationService service;
     private final PdfService pdfService;
     private final SiteService siteService;
+    private final PpeInferenceService inferenceService;
+    private final ObjectMapper mapper;
+
+    /**
+     * Mobile posts the captured photo for cloud-side PPE inference.
+     * Returns detected items + base64 annotated JPEG.
+     * Public endpoint — no auth required (mobile uses it before auth flow).
+     */
+    @PostMapping("/analyze")
+    public ResponseEntity<Map<String, Object>> analyze(
+            @RequestPart("image") MultipartFile image,
+            @RequestPart("items") String itemsJson,
+            @RequestParam(name = "fr", defaultValue = "false") boolean isFrench) throws Exception {
+
+        List<PpeInferenceService.RequiredItem> items = mapper.readValue(
+            itemsJson, new TypeReference<List<PpeInferenceService.RequiredItem>>() {});
+
+        PpeInferenceService.AnalysisResult result =
+            inferenceService.analyze(image.getBytes(), items, isFrench);
+
+        List<Map<String, Object>> itemsOut = result.items().stream()
+            .map(i -> Map.<String, Object>of(
+                "ppeCode", i.ppeCode(),
+                "ppeLabel", i.ppeLabel(),
+                "detected", i.detected(),
+                "confidence", i.confidence(),
+                "partialWarning", i.partialWarning(),
+                "wrongType", i.wrongType()
+            )).toList();
+
+        return ResponseEntity.ok(Map.of(
+            "items", itemsOut,
+            "annotatedImageBase64", Base64.getEncoder().encodeToString(result.annotatedJpeg())
+        ));
+    }
 
     /** Mobile submits a completed PPE verification result. */
     @PostMapping
