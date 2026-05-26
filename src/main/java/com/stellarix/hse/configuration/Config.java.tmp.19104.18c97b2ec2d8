@@ -103,11 +103,19 @@ public class Config {
 
             // ── Companies & Roles ────────────────────────────────────────────────
             Company stellarix = company("Stellarix");
-            InductionRole stagiaire = role("Stagiaire");
+            Company technet   = company("TechNet Solutions");
 
-            // ── Inductions ───────────────────────────────────────────────────────
-            induction("Anderson", "Mahosy", "+261 34 81 362 05",
-                    "andersonmahosi@gmail.com", stellarix, stagiaire, h0);
+            InductionRole electSenior = role("Électricien senior");
+            InductionRole techReseau  = role("Technicien réseau");
+            InductionRole visiteurAcc = role("Visiteur accrédité");
+
+            // ── Inductions (3) ───────────────────────────────────────────────────
+            induction("Jean",   "Rakotomalala",  "+261 34 00 00 01",
+                    "jean.rakotomalala@stellarix.com",  stellarix, electSenior, h0, b1, br, bc);
+            induction("Sophie", "Rasoamahenina", "+261 34 00 00 02",
+                    "sophie.rasoamahenina@technet.com", technet,   techReseau,  h0, b1);
+            induction("Luc",    "Randriamihaja",  "+261 34 00 00 03",
+                    "luc.randriamihaja@stellarix.com",  stellarix, visiteurAcc);
 
             log.info("[Seed] Done — {} sites, {} PPE items, {} inductions.",
                     siteRepo.count(), ppeItemRepo.count(), inductionRepo.count());

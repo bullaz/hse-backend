@@ -38,6 +38,8 @@ public class VerificationLogResponse {
         private UUID id;
         private String firstName;
         private String lastName;
+        private String company;
+        private String work;
     }
 
     @Data

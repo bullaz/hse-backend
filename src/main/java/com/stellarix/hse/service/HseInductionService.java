@@ -42,21 +42,28 @@ public class HseInductionService {
     /** Mobile calls this on startup to cache the full induction list for offline checks. */
     public List<Map<String, Object>> getAllNames() {
         return repository.findAll().stream()
-                .<Map<String, Object>>map(i -> Map.of(
-                        "id", i.getInductionId(),
-                        "firstName", i.getFirstName(),
-                        "lastName", i.getLastName()))
+                .<Map<String, Object>>map(i -> {
+                    var habCodes = i.getHabilitations().stream().map(h -> h.getCode()).toList();
+                    return Map.of(
+                            "id", i.getInductionId(),
+                            "firstName", i.getFirstName(),
+                            "lastName", i.getLastName(),
+                            "habilitationCodes", habCodes);
+                })
                 .toList();
     }
 
     /**
      * Mobile calls this before the PPE check.
-     * Returns {@code {inducted:true, inductionId:UUID}} or {@code {inducted:false}}.
+     * Returns {@code {inducted:true, inductionId:UUID, habilitationCodes:[...]}} or {@code {inducted:false}}.
      */
     public Map<String, Object> verifyInduction(String firstName, String lastName) {
         return repository.findByFirstNameIgnoreCaseAndLastNameIgnoreCase(firstName.trim(), lastName.trim())
-                .<Map<String, Object>>map(i -> Map.of("inducted", true, "inductionId", i.getInductionId()))
-                .orElse(Map.of("inducted", false));
+                .<Map<String, Object>>map(i -> {
+                    var habCodes = i.getHabilitations().stream().map(h -> h.getCode()).toList();
+                    return Map.of("inducted", true, "inductionId", i.getInductionId(), "habilitationCodes", habCodes);
+                })
+                .orElse(Map.of("inducted", false, "habilitationCodes", java.util.List.of()));
     }
 
     /** Used internally (e.g. admin checks). */

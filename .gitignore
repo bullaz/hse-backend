@@ -39,3 +39,6 @@ out/
 
 .env
 gradle.properties
+
+### ML Models (too large for GitHub — copy manually between machines) ###
+models/

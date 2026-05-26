@@ -295,10 +295,14 @@ public class PpeVerificationService {
                         r.getConfidence()))
                     .toList();
 
+        String companyName = log.getInduction().getCompany() != null
+                ? log.getInduction().getCompany().getName() : null;
         VerificationLogResponse.InductionDto inductionDto = new VerificationLogResponse.InductionDto(
                 log.getInduction().getInductionId(),
                 log.getInduction().getFirstName(),
-                log.getInduction().getLastName());
+                log.getInduction().getLastName(),
+                companyName,
+                log.getInduction().getWork());
 
         String permitId = log.getPermit() != null ? log.getPermit().getPermitId() : null;
         String permitTypeLabel = (log.getPermit() != null && log.getPermit().getPermitType() != null)
