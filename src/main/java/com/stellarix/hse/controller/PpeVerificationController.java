@@ -80,7 +80,8 @@ public class PpeVerificationController {
 
         return ResponseEntity.ok(Map.of(
             "items", itemsOut,
-            "annotatedImageBase64", Base64.getEncoder().encodeToString(result.annotatedJpeg())
+            "annotatedImageBase64", Base64.getEncoder().encodeToString(result.annotatedJpeg()),
+            "personDetected", result.personDetected()
         ));
     }
 

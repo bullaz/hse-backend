@@ -34,6 +34,6 @@ hse.mail.phone=${MAIL_PHONE:+261 00 00 000 00}
 
 ppe.models.det=${PPE_DET_MODEL:models/det.onnx}
 ppe.models.glasses=${PPE_GLASSES_MODEL:models/glasses.onnx}
-ppe.models.shoes=${PPE_SHOES_MODEL:D:/STG/livrables_de_projet/raw/other-shoes-model/v2/effnet_bce_binary_safety_shoes.onnx}
+ppe.models.shoes=${PPE_SHOES_MODEL:D:/STG/livrables_de_projet/raw/other-shoes-model/v3/efficientnet_b0_safety_shoes_bce.onnx}
 
 

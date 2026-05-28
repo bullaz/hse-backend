@@ -211,7 +211,7 @@ public class PpeInferenceService {
                 result.add(d.withRefinement(cr[0] >= 0.65f, cr[0]));
             } else if (d.cls == 5) {
                 float[] cr = runClassifier(crop(orig, d), shoes, true);    // BCE
-                result.add(d.withRefinement(cr[0] >= 0.60f, cr[0]));
+                result.add(d.withRefinement(cr[0] >= 0.80f, cr[0]));
             } else {
                 result.add(d);
             }

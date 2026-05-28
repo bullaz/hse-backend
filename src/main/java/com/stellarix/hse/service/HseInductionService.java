@@ -44,11 +44,17 @@ public class HseInductionService {
         return repository.findAll().stream()
                 .<Map<String, Object>>map(i -> {
                     var habCodes = i.getHabilitations().stream().map(h -> h.getCode()).toList();
-                    return Map.of(
-                            "id", i.getInductionId(),
-                            "firstName", i.getFirstName(),
-                            "lastName", i.getLastName(),
-                            "habilitationCodes", habCodes);
+                    var result = new java.util.HashMap<String, Object>();
+                    result.put("id", i.getInductionId());
+                    result.put("firstName", i.getFirstName());
+                    result.put("lastName", i.getLastName());
+                    result.put("habilitationCodes", habCodes);
+                    if (i.getCompany() != null) {
+                        result.put("company", java.util.Map.of(
+                                "id", i.getCompany().getCompanyId(),
+                                "name", i.getCompany().getName()));
+                    }
+                    return result;
                 })
                 .toList();
     }

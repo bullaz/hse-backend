@@ -1,5 +1,6 @@
 package com.stellarix.hse.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -22,6 +23,7 @@ public class InductionRole {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "role_id")
+    @JsonProperty("id")
     private Integer roleId;
 
     @Column(nullable = false, unique = true, length = 150)

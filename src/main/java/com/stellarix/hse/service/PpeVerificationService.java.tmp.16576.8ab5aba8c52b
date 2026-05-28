@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 import javax.imageio.ImageIO;
@@ -112,7 +111,6 @@ public class PpeVerificationService {
         }).toList();
 
         resultRepository.saveAll(results);
-        saved.setItemResults(new java.util.ArrayList<>(results)); // populate in-memory so WebSocket broadcast has full data
 
         if ("REJECTED".equals(request.getStatus())) {
             List<String> causes = request.getItemResults().stream()
@@ -149,10 +147,6 @@ public class PpeVerificationService {
         img.setImageData(imageData);
         img.setExpiresAt(log.getCapturedAt().plusHours(48));
         entityManager.persist(img);
-        entityManager.flush();
-
-        // Re-broadcast so frontend updates hasCompositeImage in real-time
-        messagingTemplate.convertAndSend("/topic/verifications", toResponse(log, Set.of(logId)));
     }
 
     /** Returns the composite image bytes for a log, or empty if not yet uploaded. */

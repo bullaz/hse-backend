@@ -1,5 +1,6 @@
 package com.stellarix.hse.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -22,6 +23,7 @@ public class Company {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "company_id")
+    @JsonProperty("id")
     private Integer companyId;
 
     @Column(nullable = false, unique = true, length = 150)
