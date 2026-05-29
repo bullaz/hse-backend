@@ -29,8 +29,12 @@ public class WorkPermit {
     private String permitId;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "induction_id", nullable = false)
+    @JoinColumn(name = "induction_id")
     private HseInduction induction;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "travaux_id")
+    private Travaux travaux;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "site_id", nullable = false)

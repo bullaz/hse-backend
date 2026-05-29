@@ -30,6 +30,8 @@ public class PpeVerificationRequest {
 
     private boolean offline = false;
 
+    private UUID travauxId; // optional — links this log to a Travaux/Visite dossier
+
     private String description;
 
     @NotNull

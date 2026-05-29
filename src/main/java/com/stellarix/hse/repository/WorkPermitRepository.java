@@ -17,7 +17,7 @@ import com.stellarix.hse.entity.WorkPermit;
 public interface WorkPermitRepository extends JpaRepository<WorkPermit, String> {
 
     @Query(value = "SELECT w.* FROM hse_schema.work_permit w " +
-                   "JOIN hse_schema.hse_induction i ON i.induction_id = w.induction_id " +
+                   "LEFT JOIN hse_schema.hse_induction i ON i.induction_id = w.induction_id " +
                    "WHERE (CAST(:name AS text) IS NULL OR LOWER(i.first_name || ' ' || i.last_name) LIKE LOWER('%' || :name || '%')) " +
                    "AND (CAST(:siteId AS integer) IS NULL OR w.site_id = :siteId) " +
                    "AND (CAST(:status AS text) IS NULL " +
@@ -28,7 +28,7 @@ public interface WorkPermitRepository extends JpaRepository<WorkPermit, String> 
                    "AND (CAST(:dateTo AS timestamp) IS NULL OR w.created_at <= CAST(:dateTo AS timestamp)) " +
                    "ORDER BY w.created_at DESC",
            countQuery = "SELECT COUNT(*) FROM hse_schema.work_permit w " +
-                        "JOIN hse_schema.hse_induction i ON i.induction_id = w.induction_id " +
+                        "LEFT JOIN hse_schema.hse_induction i ON i.induction_id = w.induction_id " +
                         "WHERE (CAST(:name AS text) IS NULL OR LOWER(i.first_name || ' ' || i.last_name) LIKE LOWER('%' || :name || '%')) " +
                         "AND (CAST(:siteId AS integer) IS NULL OR w.site_id = :siteId) " +
                         "AND (CAST(:status AS text) IS NULL " +
@@ -44,6 +44,10 @@ public interface WorkPermitRepository extends JpaRepository<WorkPermit, String> 
                                      @Param("dateFrom") String dateFrom,
                                      @Param("dateTo") String dateTo,
                                      Pageable pageable);
+
+    List<WorkPermit> findByTravauxTravauxId(UUID travauxId);
+
+    long countByTravauxTravauxId(UUID travauxId);
 
     @Query("SELECT w FROM WorkPermit w WHERE w.induction.inductionId = :inductionId " +
            "AND w.site.siteId = :siteId AND w.status = 'ACTIVE' AND w.endDatetime >= :now " +

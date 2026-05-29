@@ -61,6 +61,10 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/hse/sites", "/hse/ppe-items", "/hse/ppe-matrix", "/hse/ppe-matrix/mobile-cache", "/hse/inductions/verify", "/hse/inductions/names", "/hse/zone-types", "/hse/habilitations", "/hse/permits/verify").permitAll()
                 // Mobile — cloud inference (no auth required, image never stored here)
                 .requestMatchers(HttpMethod.POST, "/hse/verifications/analyze").permitAll()
+                // Travaux — public endpoints (no auth)
+                .requestMatchers(HttpMethod.GET, "/hse/travaux/verify-entry").permitAll()
+                .requestMatchers(HttpMethod.GET, "/hse/travaux/by-token").permitAll()
+                .requestMatchers(HttpMethod.POST, "/hse/travaux/close").permitAll()
                 // Mobile — submit verification + offline sync + rejected image upload + certify
                 .requestMatchers(HttpMethod.POST, "/hse/verifications", "/hse/verifications/sync").permitAll()
                 .requestMatchers(HttpMethod.POST, "/hse/verifications/*/image").permitAll()

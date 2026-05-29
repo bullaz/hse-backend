@@ -109,7 +109,9 @@ public class WorkPermitService {
         permit.setPermitFileData(data);
         permit.setPermitFileContentType(contentType != null ? contentType : "application/octet-stream");
         repository.save(permit);
-        emailService.sendPermitEmail(permit);
+        if (permit.getInduction() != null) {
+            emailService.sendPermitEmail(permit);
+        }
     }
 
     /** Mobile endpoint — validates permit ID, site match, and time window (start−1h ≤ now ≤ end). */
@@ -151,12 +153,14 @@ public class WorkPermitService {
                 && LocalDateTime.now().isAfter(permit.getEndDatetime())
                 ? "EXPIRED" : permit.getStatus();
 
-        WorkPermitResponse.PersonDto person = new WorkPermitResponse.PersonDto(
-                permit.getInduction().getInductionId(),
-                permit.getInduction().getFirstName(),
-                permit.getInduction().getLastName(),
-                permit.getInduction().getEmail(),
-                permit.getInduction().getPhone());
+        WorkPermitResponse.PersonDto person = permit.getInduction() != null
+                ? new WorkPermitResponse.PersonDto(
+                        permit.getInduction().getInductionId(),
+                        permit.getInduction().getFirstName(),
+                        permit.getInduction().getLastName(),
+                        permit.getInduction().getEmail(),
+                        permit.getInduction().getPhone())
+                : null;
 
         String zoneTypeLabel = permit.getSite().getZoneType() != null
                 ? permit.getSite().getZoneType().getLabel() : null;
@@ -193,9 +197,9 @@ public class WorkPermitService {
                 .valid(valid)
                 .reason(reason)
                 .permitId(permit.getPermitId())
-                .inductionId(permit.getInduction().getInductionId())
-                .firstName(permit.getInduction().getFirstName())
-                .lastName(permit.getInduction().getLastName())
+                .inductionId(permit.getInduction() != null ? permit.getInduction().getInductionId() : null)
+                .firstName(permit.getInduction() != null ? permit.getInduction().getFirstName() : null)
+                .lastName(permit.getInduction() != null ? permit.getInduction().getLastName() : null)
                 .siteName(permit.getSite().getName())
                 .startDatetime(permit.getStartDatetime())
                 .endDatetime(permit.getEndDatetime())

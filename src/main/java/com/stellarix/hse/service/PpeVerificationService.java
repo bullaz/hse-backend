@@ -40,6 +40,7 @@ import com.stellarix.hse.repository.PpeVerificationLogRepository;
 import com.stellarix.hse.repository.RejectedImageRepository;
 import com.stellarix.hse.repository.SiteRepository;
 import com.stellarix.hse.repository.VerificationCompositeImageRepository;
+import com.stellarix.hse.repository.TravauxRepository;
 import com.stellarix.hse.repository.WorkPermitRepository;
 
 import jakarta.persistence.EntityManager;
@@ -61,6 +62,7 @@ public class PpeVerificationService {
     private final SiteRepository siteRepository;
     private final HseInductionRepository inductionRepository;
     private final WorkPermitRepository workPermitRepository;
+    private final TravauxRepository travauxRepository;
     private final SimpMessagingTemplate messagingTemplate;
 
     @PersistenceContext
@@ -90,8 +92,11 @@ public class PpeVerificationService {
         log.setSyncedAt(request.isOffline() ? LocalDateTime.now() : null);
         log.setDescription(request.getDescription());
 
-        // Auto-link active work permit for WORK intent submissions
-        if ("WORK".equals(request.getIntent())) {
+        // Link to Travaux dossier if provided (takes priority over auto-linking a personal permit)
+        if (request.getTravauxId() != null) {
+            travauxRepository.findById(request.getTravauxId()).ifPresent(log::setTravaux);
+        } else if ("WORK".equals(request.getIntent())) {
+            // Legacy: auto-link active personal work permit for WORK intent submissions
             List<WorkPermit> activePermits = workPermitRepository.findActiveByInductionAndSite(
                     induction.getInductionId(), site.getSiteId(), LocalDateTime.now());
             if (!activePermits.isEmpty()) {

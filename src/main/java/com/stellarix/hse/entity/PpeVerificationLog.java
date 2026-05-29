@@ -73,6 +73,10 @@ public class PpeVerificationLog {
     @JoinColumn(name = "permit_id")
     private WorkPermit permit;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "travaux_id")
+    private Travaux travaux;
+
     @OneToMany(mappedBy = "verificationLog", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     private List<PpeItemResult> itemResults;
 
