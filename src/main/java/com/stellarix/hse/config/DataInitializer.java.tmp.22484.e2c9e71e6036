@@ -1,0 +1,51 @@
+package com.stellarix.hse.config;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.stereotype.Component;
+
+import com.stellarix.hse.entity.Hse;
+import com.stellarix.hse.repository.HseRepository;
+import com.stellarix.hse.service.AccountService;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class DataInitializer {
+
+    private final HseRepository hseRepository;
+    private final AccountService accountService;
+
+    @Value("${admin.username:admin}")
+    private String adminUsername;
+
+    @Value("${admin.password:}")
+    private String adminPassword;
+
+    @EventListener(ApplicationReadyEvent.class)
+    public void seedAdminIfEmpty() {
+        if (hseRepository.count() > 0) return;
+
+        if (adminPassword == null || adminPassword.isBlank()) {
+            log.error("=== ADMIN_PASSWORD env var not set — skipping admin seed. Set it in .env and restart. ===");
+            return;
+        }
+
+        Hse admin = new Hse();
+        admin.setEmail(adminUsername + "@stellarix.internal");
+        admin.setUsername(adminUsername);
+        admin.setNom("Admin");
+        admin.setPrenom("IT");
+        admin.setPassword(adminPassword);
+        admin.setAdmin(true);
+        admin.setActive(true);
+        admin.setMustChangePassword(true);
+
+        accountService.addUser(admin);
+        log.warn("=== Admin account created: {} — change password on first login ===", adminUsername);
+    }
+}

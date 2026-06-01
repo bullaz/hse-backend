@@ -2,21 +2,22 @@ package com.stellarix.hse.repository;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.stellarix.hse.entity.Hse;
-import com.stellarix.hse.entity.Question;
 
 @Repository
-public interface HseRepository extends JpaRepository<Hse, Integer>{
-	
-	Optional<Hse> findByUsernameOrEmail(String nameOrEmail, String nameOrEmail2);
-	
-//	@Query("select * from question JOIN reponse On reponse.question_id = question.question_id WHERE reponse.valeur = false and reponse.toko5_id = :toko5Id and question.required = true")
-//	List<Question> findToko5Probleme(@Param("toko5Id") UUID toko5Id);
+public interface HseRepository extends JpaRepository<Hse, Integer> {
+
+    Optional<Hse> findByUsernameOrEmail(String nameOrEmail, String nameOrEmail2);
+
+    List<Hse> findByIsAdminFalseOrderByNomAscPrenomAsc();
+
+    boolean existsByEmail(String email);
+
+    boolean existsByUsername(String username);
+
+    boolean existsByIsAdminTrue();
 }

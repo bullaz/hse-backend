@@ -205,7 +205,7 @@ public class TravauxService {
         travaux.setStatus("PERMITS_READY");
         travauxRepository.save(travaux);
 
-        String closureUrl = frontendUrl.replaceAll("/$", "") + "/close-work?token=" + token;
+        String closureUrl = frontendUrl.replaceAll("/$", "") + "/travaux/cloture?token=" + token;
         emailService.sendTravauxPermitsEmail(travaux, permits, closureUrl);
         log.info("Permits sent to {} for travaux {}", travaux.getSuperviseurEmail(), id);
     }
@@ -311,7 +311,7 @@ public class TravauxService {
         travauxRepository.save(travaux);
 
         List<WorkPermit> permits = workPermitRepository.findByTravauxTravauxId(id);
-        String closureUrl = frontendUrl.replaceAll("/$", "") + "/close-work?token=" + newToken;
+        String closureUrl = frontendUrl.replaceAll("/$", "") + "/travaux/cloture?token=" + newToken;
         emailService.sendTravauxPermitsEmail(travaux, permits, closureUrl);
         log.info("Closure rejected, new token sent to {} for travaux {}", travaux.getSuperviseurEmail(), id);
     }

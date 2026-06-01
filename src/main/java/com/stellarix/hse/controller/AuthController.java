@@ -4,12 +4,17 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,6 +28,7 @@ import com.stellarix.hse.entity.Hse;
 import com.stellarix.hse.service.AccountService;
 import com.stellarix.hse.service.JwtService;
 import com.stellarix.hse.service.RefreshTokenService;
+import com.stellarix.hse.service.TotpService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +44,10 @@ public class AuthController {
     private final AccountService accountService;
     private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
+    private final TotpService totpService;
+
+    @Value("${cookie.secure:false}")
+    private boolean cookieSecure;
 
     @GetMapping("/test")
     public String healthCheck() {
@@ -45,23 +55,75 @@ public class AuthController {
     }
 
     @PostMapping("/signin")
-    public ResponseEntity<Map<String, String>> signin(@Valid @RequestBody AuthRequest request) {
-        authenticationManager.authenticate(
-            new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
-        );
-        Hse user = accountService.findByUsernameOrEmail(request.getUsername());
+    public ResponseEntity<?> signin(@Valid @RequestBody AuthRequest request) {
+        // 1. Resolve user — generic 401 to prevent user enumeration
+        Hse user;
+        try {
+            user = accountService.findByUsernameOrEmail(request.getUsername());
+        } catch (UsernameNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Identifiants incorrects"));
+        }
 
+        // 2. Disabled account
+        if (!user.isActive()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Ce compte a été désactivé. Contactez l'administrateur."));
+        }
+
+        // 3. Brute force lockout
+        if (accountService.isAccountLocked(user)) {
+            return ResponseEntity.status(HttpStatus.LOCKED)
+                    .body(Map.of("error", "Compte verrouillé. Réessayez dans "
+                            + accountService.minutesUntilUnlock(user) + " minute(s)."));
+        }
+
+        // 4. Password verification
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
+        } catch (BadCredentialsException | LockedException | DisabledException e) {
+            accountService.recordFailedAttempt(user);
+            if (accountService.isAccountLocked(user)) {
+                return ResponseEntity.status(HttpStatus.LOCKED)
+                        .body(Map.of("error", "Trop de tentatives. Compte verrouillé 15 minutes."));
+            }
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Identifiants incorrects"));
+        }
+
+        accountService.resetFailedAttempts(user);
+
+        // 5. TOTP check (only for users who have already set it up)
+        if (user.isTotpEnabled()) {
+            if (request.getTotpCode() == null || request.getTotpCode().isBlank()) {
+                return ResponseEntity.status(HttpStatus.ACCEPTED)
+                        .body(Map.of("requiresTotp", true));
+            }
+            if (!totpService.verifyCode(user.getTotpSecret(), request.getTotpCode())) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Code authentificateur invalide"));
+            }
+        }
+
+        // 6. Issue tokens
         UUID jti = refreshTokenService.issue(user.getEmail());
         Map<String, String> tokens = jwtService.generateToken(user.getEmail(), user.getNom(), user.getPrenom(), jti);
         String refreshToken = tokens.remove("refresh_token");
 
+        Map<String, Object> body = new HashMap<>(tokens);
+        body.put("must_change_password", user.isMustChangePassword());
+        body.put("totp_enabled", user.isTotpEnabled());
+        body.put("is_admin", user.isAdmin());
+
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, buildRefreshCookie(refreshToken, 7L * 24 * 60 * 60))
-                .body(tokens);
+                .body(body);
     }
 
     @PostMapping("/verify_token")
-    public Map<String, Boolean> verifyToken(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+    public Map<String, Boolean> verifyToken(
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
         Map<String, Boolean> result = new HashMap<>();
         if (authHeader == null || !authHeader.startsWith("Bearer ") || authHeader.length() <= 7) {
             result.put("token_state", false);
@@ -87,6 +149,10 @@ public class AuthController {
             }
             String email = jwtService.extractUsername(refreshToken);
             Hse user = accountService.findByUsernameOrEmail(email);
+
+            if (!user.isActive()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Account disabled");
+            }
 
             UUID newJti = refreshTokenService.rotate(oldJti, user.getEmail());
             String newAccessToken = jwtService.generateAccessToken(user.getEmail(), user.getNom(), user.getPrenom());
@@ -120,7 +186,7 @@ public class AuthController {
     private String buildRefreshCookie(String value, long maxAgeSeconds) {
         return ResponseCookie.from("refresh_token", value)
                 .httpOnly(true)
-                .secure(false)
+                .secure(cookieSecure)
                 .path("/")
                 .maxAge(maxAgeSeconds)
                 .sameSite("Lax")

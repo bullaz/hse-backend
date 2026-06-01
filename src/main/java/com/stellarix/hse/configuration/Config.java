@@ -7,11 +7,8 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.security.crypto.password.PasswordEncoder;
-
 import com.stellarix.hse.entity.Company;
 import com.stellarix.hse.entity.Habilitation;
-import com.stellarix.hse.entity.Hse;
 import com.stellarix.hse.entity.HseInduction;
 import com.stellarix.hse.entity.InductionRole;
 import com.stellarix.hse.entity.PpeItem;
@@ -21,7 +18,6 @@ import com.stellarix.hse.entity.ZoneType;
 import com.stellarix.hse.repository.CompanyRepository;
 import com.stellarix.hse.repository.HabilitationRepository;
 import com.stellarix.hse.repository.HseInductionRepository;
-import com.stellarix.hse.repository.HseRepository;
 import com.stellarix.hse.repository.InductionRoleRepository;
 import com.stellarix.hse.repository.PpeItemRepository;
 import com.stellarix.hse.repository.PpeRequirementRepository;
@@ -37,8 +33,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class Config {
 
-    private final HseRepository hseRepo;
-    private final PasswordEncoder passwordEncoder;
     private final SiteRepository siteRepo;
     private final PpeItemRepository ppeItemRepo;
     private final PpeRequirementRepository requirementRepo;
@@ -51,20 +45,11 @@ public class Config {
     @Bean
     CommandLineRunner commandLineRunner() {
         return args -> {
-            if (hseRepo.count() > 0) {
-                log.info("[Seed] Data already present — skipping.");
+            if (habilitationRepo.count() > 0) {
+                log.info("[Seed] Reference data already present — skipping.");
                 return;
             }
-            log.info("[Seed] Seeding initial data…");
-
-            // ── Admin user ───────────────────────────────────────────────────────
-            Hse admin = new Hse();
-            admin.setNom("Mahosy");
-            admin.setPrenom("Anderson");
-            admin.setEmail("andersonmahosi@gmail.com");
-            admin.setUsername("anderson");
-            admin.setPassword(passwordEncoder.encode("motdepasse2002"));
-            hseRepo.save(admin);
+            log.info("[Seed] Seeding reference data…");
 
             // ── Habilitations ────────────────────────────────────────────────────
             Habilitation h0 = hab("H0", "Hors tension",          "Non-électricien habilité à travailler hors tension");

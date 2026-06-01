@@ -47,6 +47,58 @@ public class EmailService {
     private String fromPhone;
 
     @Async
+    public void sendWelcomeEmail(String toEmail, String nom, String prenom, String username, String tempPassword) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
+            helper.setFrom(new InternetAddress(fromAddress, fromName));
+            helper.setTo(toEmail);
+            helper.setSubject("[Stellarix HSE] Votre accès à la plateforme HSE");
+            helper.setText("""
+                    <!DOCTYPE html><html lang="fr">
+                    <head><meta charset="UTF-8"></head>
+                    <body style="margin:0;padding:0;background:#f4f4f7;font-family:Arial,Helvetica,sans-serif;color:#1a1a2e">
+                      <table width="100%%" cellpadding="0" cellspacing="0" style="background:#f4f4f7;padding:32px 0">
+                        <tr><td align="center">
+                          <table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%%">
+                            <tr><td style="background:#1a1a2e;border-radius:8px 8px 0 0;padding:28px 32px">
+                              <p style="margin:0;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#8888bb">Stellarix Safe — Système HSE</p>
+                              <h1 style="margin:6px 0 0;font-size:20px;font-weight:700;color:#fff">Bienvenue sur la plateforme</h1>
+                            </td></tr>
+                            <tr><td style="background:#fff;padding:32px;border-left:1px solid #e0e0e0;border-right:1px solid #e0e0e0">
+                              <p style="margin:0 0 16px;font-size:15px">Bonjour <strong>%s %s</strong>,</p>
+                              <p style="margin:0 0 24px;font-size:14px;color:#555;line-height:1.6">
+                                Un compte HSE a été créé pour vous. Voici vos identifiants de connexion :
+                              </p>
+                              <table width="100%%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-bottom:24px;font-size:14px">
+                                <tr><td style="padding:10px 12px;background:#fafafa;font-weight:600;width:140px">Identifiant</td>
+                                    <td style="padding:10px 12px;font-family:monospace">%s</td></tr>
+                                <tr><td style="padding:10px 12px;background:#fafafa;font-weight:600">Mot de passe</td>
+                                    <td style="padding:10px 12px;font-family:monospace;color:#2322F0;font-weight:700">%s</td></tr>
+                              </table>
+                              <p style="margin:0 0 8px;font-size:13px;color:#e53935;font-weight:600">
+                                Vous devrez changer ce mot de passe lors de votre première connexion.
+                              </p>
+                              <p style="margin:0;font-size:13px;color:#555">
+                                Nous vous recommandons également d'activer l'authentification à deux facteurs (TOTP) après votre première connexion.
+                              </p>
+                            </td></tr>
+                            <tr><td style="background:#f0f0f0;border:1px solid #e0e0e0;border-top:none;border-radius:0 0 8px 8px;padding:16px 32px">
+                              <p style="margin:0;font-size:12px;color:#555">%s &nbsp;|&nbsp; %s &nbsp;|&nbsp; %s</p>
+                            </td></tr>
+                          </table>
+                        </td></tr>
+                      </table>
+                    </body></html>
+                    """.formatted(prenom, nom, username, tempPassword, fromName, fromAddress, fromPhone), true);
+            mailSender.send(message);
+            log.info("Welcome email sent to {}", toEmail);
+        } catch (Exception e) {
+            log.error("Failed to send welcome email to {}: {}", toEmail, e.getMessage());
+        }
+    }
+
+    @Async
     public void sendPermitEmail(WorkPermit permit) {
         String recipientEmail = permit.getInduction().getEmail();
         if (recipientEmail == null || recipientEmail.isBlank()) {
