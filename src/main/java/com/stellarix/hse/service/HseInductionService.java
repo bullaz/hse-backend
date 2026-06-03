@@ -49,6 +49,7 @@ public class HseInductionService {
                     result.put("firstName", i.getFirstName());
                     result.put("lastName", i.getLastName());
                     result.put("habilitationCodes", habCodes);
+                    if (i.getCinNumber() != null) result.put("cinNumber", i.getCinNumber());
                     if (i.getCompany() != null) {
                         result.put("company", java.util.Map.of(
                                 "id", i.getCompany().getCompanyId(),
@@ -62,17 +63,22 @@ public class HseInductionService {
     /**
      * Mobile calls this before the PPE check.
      * Returns {@code {inducted:true, inductionId:UUID, habilitationCodes:[...]}} or {@code {inducted:false}}.
+     * If {@code cin} is provided, the record's CIN must match (case-insensitive).
      */
-    public Map<String, Object> verifyInduction(String firstName, String lastName) {
-        return repository.findByFirstNameIgnoreCaseAndLastNameIgnoreCase(firstName.trim(), lastName.trim())
-                .<Map<String, Object>>map(i -> {
-                    var habCodes = i.getHabilitations().stream().map(h -> h.getCode()).toList();
-                    return Map.of("inducted", true, "inductionId", i.getInductionId(), "habilitationCodes", habCodes);
-                })
-                .orElse(Map.of("inducted", false, "habilitationCodes", java.util.List.of()));
+    public Map<String, Object> verifyInduction(String firstName, String lastName, String cin) {
+        var opt = repository.findByFirstNameIgnoreCaseAndLastNameIgnoreCase(firstName.trim(), lastName.trim());
+        if (opt.isEmpty()) {
+            return Map.of("inducted", false, "habilitationCodes", java.util.List.of());
+        }
+        var i = opt.get();
+        if (cin != null && !cin.isBlank() && i.getCinNumber() != null
+                && !i.getCinNumber().equalsIgnoreCase(cin.trim())) {
+            return Map.of("inducted", false, "cinMismatch", true, "habilitationCodes", java.util.List.of());
+        }
+        var habCodes = i.getHabilitations().stream().map(h -> h.getCode()).toList();
+        return Map.of("inducted", true, "inductionId", i.getInductionId(), "habilitationCodes", habCodes);
     }
 
-    /** Used internally (e.g. admin checks). */
     public boolean isInducted(String firstName, String lastName) {
         return repository.existsByFirstNameIgnoreCaseAndLastNameIgnoreCase(firstName.trim(), lastName.trim());
     }
@@ -96,6 +102,7 @@ public class HseInductionService {
         HseInduction induction = new HseInduction();
         induction.setFirstName(request.getFirstName().trim());
         induction.setLastName(request.getLastName().trim());
+        induction.setCinNumber(request.getCinNumber());
         induction.setPhone(request.getPhone());
         induction.setEmail(request.getEmail());
         induction.setWork(request.getWork());
@@ -121,6 +128,7 @@ public class HseInductionService {
 
         induction.setFirstName(request.getFirstName().trim());
         induction.setLastName(request.getLastName().trim());
+        induction.setCinNumber(request.getCinNumber());
         induction.setPhone(request.getPhone());
         induction.setEmail(request.getEmail());
         induction.setWork(request.getWork());

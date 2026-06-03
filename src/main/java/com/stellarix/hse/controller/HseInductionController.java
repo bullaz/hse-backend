@@ -46,8 +46,11 @@ public class HseInductionController {
 
     /** Mobile calls this before the PPE check. Returns {@code {inducted, inductionId?}}. */
     @GetMapping("/verify")
-    public Map<String, Object> verify(@RequestParam String firstName, @RequestParam String lastName) {
-        return service.verifyInduction(firstName, lastName);
+    public Map<String, Object> verify(
+            @RequestParam String firstName,
+            @RequestParam String lastName,
+            @RequestParam(required = false) String cin) {
+        return service.verifyInduction(firstName, lastName, cin);
     }
 
     @PostMapping

@@ -14,4 +14,6 @@ public interface HseInductionRepository extends JpaRepository<HseInduction, UUID
     boolean existsByFirstNameIgnoreCaseAndLastNameIgnoreCase(String firstName, String lastName);
 
     Optional<HseInduction> findByFirstNameIgnoreCaseAndLastNameIgnoreCase(String firstName, String lastName);
+
+    Optional<HseInduction> findByFirstNameIgnoreCaseAndLastNameIgnoreCaseAndCinNumberIgnoreCase(String firstName, String lastName, String cinNumber);
 }

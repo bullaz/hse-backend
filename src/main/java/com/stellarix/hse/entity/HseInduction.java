@@ -60,6 +60,9 @@ public class HseInduction {
     @JoinColumn(name = "role_id")
     private InductionRole role;
 
+    @Column(name = "cin_number")
+    private String cinNumber;
+
     @Column(name = "registered_at", nullable = false, updatable = false)
     private LocalDateTime registeredAt;
 

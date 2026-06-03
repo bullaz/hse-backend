@@ -13,6 +13,7 @@ public class HseInductionRequest {
     @NotBlank
     private String lastName;
 
+    private String cinNumber;
     private String phone;
     private String email;
     private String work;

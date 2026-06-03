@@ -381,7 +381,7 @@ public class TravauxService {
 
     // ── Verify ticket + name for mobile entry (public endpoint) ──────────────
 
-    public TravauxEntryVerifyResponse verifyEntry(String ticketNo, String firstName, String lastName) {
+    public TravauxEntryVerifyResponse verifyEntry(String ticketNo, String firstName, String lastName, String cin) {
         Travaux travaux = travauxRepository
                 .findByTicketNoIgnoreCaseAndStatus(ticketNo.trim(), "ACTIVE")
                 .orElseThrow(() -> new IllegalArgumentException("NO_ACTIVE_DOSSIER_FOR_TICKET"));
@@ -392,6 +392,12 @@ public class TravauxService {
                         && i.getLastName().equalsIgnoreCase(lastName.trim()))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("NOT_IN_DOSSIER_INTERVENANTS"));
+
+        // CIN check — reject if CIN registered on the induction does not match
+        if (cin != null && !cin.isBlank() && matching.getCinNumber() != null
+                && !matching.getCinNumber().equalsIgnoreCase(cin.trim())) {
+            throw new IllegalArgumentException("CIN_MISMATCH");
+        }
 
         // Check habilitations required by the site's zone type
         List<String> missing = List.of();

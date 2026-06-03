@@ -100,9 +100,10 @@ public class TravauxController {
     public ResponseEntity<?> verifyEntry(
             @RequestParam String ticketNo,
             @RequestParam String firstName,
-            @RequestParam String lastName) {
+            @RequestParam String lastName,
+            @RequestParam(required = false) String cin) {
         try {
-            TravauxEntryVerifyResponse response = service.verifyEntry(ticketNo, firstName, lastName);
+            TravauxEntryVerifyResponse response = service.verifyEntry(ticketNo, firstName, lastName, cin);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
