@@ -13,7 +13,7 @@ public class TotpService {
 
     private static final int CODE_DIGITS = 6;
     private static final int TIME_STEP   = 30;
-    private static final int WINDOW      = 1; // accept ±1 step to handle clock skew
+    private static final int WINDOW      = 2; // accept ±2 steps (±60s) to handle clock skew
 
     private static final String BASE32_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 
