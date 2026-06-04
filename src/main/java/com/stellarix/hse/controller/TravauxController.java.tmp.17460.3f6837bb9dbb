@@ -1,6 +1,5 @@
 package com.stellarix.hse.controller;
 
-import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
@@ -85,14 +84,14 @@ public class TravauxController {
         }
     }
 
+    /** Create a permit directly inside a Travaux (no induction needed). */
     @PostMapping(value = "/{id}/permits", consumes = {"multipart/form-data"})
     public ResponseEntity<Void> createPermit(
             @PathVariable UUID id,
             @RequestParam(required = false) Integer permitTypeId,
             @RequestParam(required = false) String description,
-            @RequestParam(required = false) List<UUID> inductionIds,
             @RequestPart(value = "file", required = false) MultipartFile file) {
-        service.createPermitForTravaux(id, permitTypeId, description, inductionIds, file);
+        service.createPermitForTravaux(id, permitTypeId, description, file);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
@@ -103,10 +102,9 @@ public class TravauxController {
             @RequestParam String firstName,
             @RequestParam String lastName,
             @RequestParam(required = false) String cin,
-            @RequestParam(required = false) Integer siteId,
-            @RequestParam(required = false) String permitId) {
+            @RequestParam(required = false) Integer siteId) {
         try {
-            TravauxEntryVerifyResponse response = service.verifyEntry(ticketNo, firstName, lastName, cin, siteId, permitId);
+            TravauxEntryVerifyResponse response = service.verifyEntry(ticketNo, firstName, lastName, cin, siteId);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());

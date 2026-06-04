@@ -57,6 +57,15 @@ public class TravauxResponse {
         private String status;
         private boolean hasFile;
         private LocalDateTime createdAt;
+        private List<PermitIntervenantDto> intervenants;
+    }
+
+    @Data
+    @Builder
+    public static class PermitIntervenantDto {
+        private UUID inductionId;
+        private String firstName;
+        private String lastName;
     }
 
     @Data

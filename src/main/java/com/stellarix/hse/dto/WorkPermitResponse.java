@@ -17,6 +17,7 @@ public class WorkPermitResponse {
 
     private String permitId;
     private PersonDto person;
+    private List<PersonDto> intervenants;
     private SiteDto site;
     private String description;
     private PermitTypeDto permitType;

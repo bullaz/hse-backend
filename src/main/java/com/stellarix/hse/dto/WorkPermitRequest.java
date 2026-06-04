@@ -1,6 +1,7 @@
 package com.stellarix.hse.dto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import jakarta.validation.constraints.NotNull;
@@ -10,10 +11,9 @@ import lombok.Data;
 public class WorkPermitRequest {
 
     @NotNull
-    private UUID inductionId;
+    private UUID travauxId;
 
-    @NotNull
-    private Integer siteId;
+    private List<UUID> inductionIds;
 
     private String description;
 

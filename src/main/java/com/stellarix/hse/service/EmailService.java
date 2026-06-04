@@ -99,11 +99,25 @@ public class EmailService {
     }
 
     @Async
+    public void sendPermitEmailToAll(WorkPermit permit) {
+        if (permit.getIntervenants() == null || permit.getIntervenants().isEmpty()) return;
+        permit.getIntervenants().forEach(induction -> sendPermitEmailTo(permit, induction));
+    }
+
+    @Async
     public void sendPermitEmail(WorkPermit permit) {
-        String recipientEmail = permit.getInduction().getEmail();
+        if (permit.getInduction() != null) {
+            sendPermitEmailTo(permit, permit.getInduction());
+        } else {
+            sendPermitEmailToAll(permit);
+        }
+    }
+
+    private void sendPermitEmailTo(WorkPermit permit, com.stellarix.hse.entity.HseInduction induction) {
+        String recipientEmail = induction.getEmail();
         if (recipientEmail == null || recipientEmail.isBlank()) {
             log.info("No email on file for induction {} — skipping permit email for {}",
-                    permit.getInduction().getInductionId(), permit.getPermitId());
+                    induction.getInductionId(), permit.getPermitId());
             return;
         }
         try {
@@ -113,7 +127,7 @@ public class EmailService {
             helper.setFrom(new InternetAddress(fromAddress, fromName));
             helper.setTo(recipientEmail);
             helper.setSubject("[Stellarix Safe] Permis de travail — " + permit.getPermitId());
-            helper.setText(buildHtml(permit), true);
+            helper.setText(buildHtml(permit, induction.getFirstName() + " " + induction.getLastName()), true);
             helper.addInline("qrcode", new ByteArrayResource(qrBytes), "image/png");
 
             if (permit.getPermitFileData() != null) {
@@ -126,7 +140,7 @@ public class EmailService {
             mailSender.send(message);
             log.info("Permit email sent to {} for permit {}", recipientEmail, permit.getPermitId());
         } catch (Exception e) {
-            log.error("Failed to send permit email for {}: {}", permit.getPermitId(), e.getMessage());
+            log.error("Failed to send permit email to {} for {}: {}", recipientEmail, permit.getPermitId(), e.getMessage());
         }
     }
 
@@ -271,8 +285,7 @@ public class EmailService {
         return baos.toByteArray();
     }
 
-    private String buildHtml(WorkPermit permit) {
-        String fullName = permit.getInduction().getFirstName() + " " + permit.getInduction().getLastName();
+    private String buildHtml(WorkPermit permit, String fullName) {
         String siteName = permit.getSite().getName();
         String start = permit.getStartDatetime().format(FMT);
         String end = permit.getEndDatetime().format(FMT);

@@ -13,9 +13,6 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.Check;
-import java.util.ArrayList;
-import java.util.List;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -37,15 +34,7 @@ public class WorkPermit {
     @JoinColumn(name = "induction_id")
     private HseInduction induction;
 
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-        name = "work_permit_intervenants",
-        joinColumns = @JoinColumn(name = "permit_id"),
-        inverseJoinColumns = @JoinColumn(name = "induction_id")
-    )
-    private List<HseInduction> intervenants = new ArrayList<>();
-
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "travaux_id")
     private Travaux travaux;
 

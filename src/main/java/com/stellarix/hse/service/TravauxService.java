@@ -329,8 +329,11 @@ public class TravauxService {
 
     @Transactional
     public void createPermitForTravaux(UUID travauxId, Integer permitTypeId,
-            String description, MultipartFile file) {
+            String description, List<UUID> inductionIds, MultipartFile file) {
         Travaux travaux = findById(travauxId);
+        if (!"TRAVAUX".equals(travaux.getAccessType())) {
+            throw new IllegalArgumentException("Permits can only be created for TRAVAUX dossiers, not VISITE");
+        }
         if ("CLOSED".equals(travaux.getStatus())) {
             throw new IllegalStateException("Cannot add permit to a closed travaux");
         }
@@ -341,6 +344,18 @@ public class TravauxService {
                     .orElseThrow(() -> new EntityNotFoundException("Permit type not found: " + permitTypeId));
         }
 
+        List<HseInduction> intervenants;
+        if (inductionIds == null || inductionIds.isEmpty()) {
+            intervenants = new java.util.ArrayList<>(travaux.getIntervenants());
+        } else {
+            intervenants = travaux.getIntervenants().stream()
+                    .filter(i -> inductionIds.contains(i.getInductionId()))
+                    .collect(java.util.stream.Collectors.toList());
+            if (intervenants.isEmpty()) {
+                throw new IllegalArgumentException("None of the provided induction IDs match the travaux intervenants");
+            }
+        }
+
         WorkPermit permit = new WorkPermit();
         permit.setPermitId(generatePermitId());
         permit.setSite(travaux.getSite());
@@ -349,6 +364,7 @@ public class TravauxService {
         permit.setPermitType(permitType);
         permit.setStartDatetime(travaux.getDateDebut());
         permit.setEndDatetime(travaux.getDateFin());
+        permit.setIntervenants(intervenants);
 
         if (file != null && !file.isEmpty()) {
             try {
@@ -360,7 +376,8 @@ public class TravauxService {
             }
         }
 
-        workPermitRepository.save(permit);
+        WorkPermit saved = workPermitRepository.save(permit);
+        emailService.sendPermitEmailToAll(saved);
     }
 
     private String generatePermitId() {
@@ -381,25 +398,30 @@ public class TravauxService {
 
     // ── Verify ticket + name for mobile entry (public endpoint) ──────────────
 
-    public TravauxEntryVerifyResponse verifyEntry(String ticketNo, String firstName, String lastName, String cin) {
+    public TravauxEntryVerifyResponse verifyEntry(String ticketNo, String firstName, String lastName, String cin, Integer siteId, String permitId) {
         Travaux travaux = travauxRepository
                 .findByTicketNoIgnoreCaseAndStatus(ticketNo.trim(), "ACTIVE")
                 .orElseThrow(() -> new IllegalArgumentException("NO_ACTIVE_DOSSIER_FOR_TICKET"));
 
-        // Find the matching induction in the intervenants list
+        if (siteId != null && !siteId.equals(travaux.getSite().getSiteId())) {
+            throw new IllegalArgumentException("WRONG_SITE");
+        }
+
+        if ("TRAVAUX".equals(travaux.getAccessType()) && (permitId == null || permitId.isBlank())) {
+            throw new IllegalArgumentException("PERMIT_REQUIRED");
+        }
+
         var matching = travaux.getIntervenants().stream()
                 .filter(i -> i.getFirstName().equalsIgnoreCase(firstName.trim())
                         && i.getLastName().equalsIgnoreCase(lastName.trim()))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("NOT_IN_DOSSIER_INTERVENANTS"));
 
-        // CIN check — reject if CIN registered on the induction does not match
         if (cin != null && !cin.isBlank() && matching.getCinNumber() != null
                 && !matching.getCinNumber().equalsIgnoreCase(cin.trim())) {
             throw new IllegalArgumentException("CIN_MISMATCH");
         }
 
-        // Check habilitations required by the site's zone type
         List<String> missing = List.of();
         if (travaux.getSite().getZoneType() != null) {
             missing = travaux.getSite().getZoneType().getHabilitations().stream()
@@ -411,6 +433,31 @@ public class TravauxService {
 
         String intent = "VISITE".equals(travaux.getAccessType()) ? "VISIT" : "WORK";
 
+        String resolvedPermitId = null;
+        String permitDescription = null;
+        if (permitId != null && !permitId.isBlank()) {
+            WorkPermit permit = workPermitRepository.findById(permitId.trim())
+                    .orElseThrow(() -> new IllegalArgumentException("INVALID_PERMIT_ID"));
+
+            if (!permit.getTravaux().getTravauxId().equals(travaux.getTravauxId())) {
+                throw new IllegalArgumentException("PERMIT_WRONG_TICKET");
+            }
+            if (!"ACTIVE".equals(permit.getStatus())) {
+                throw new IllegalArgumentException("PERMIT_NOT_ACTIVE");
+            }
+            LocalDateTime now = LocalDateTime.now();
+            if (now.isBefore(permit.getStartDatetime().minusHours(1)) || now.isAfter(permit.getEndDatetime())) {
+                throw new IllegalArgumentException("PERMIT_OUTSIDE_WINDOW");
+            }
+            boolean workerInPermit = permit.getIntervenants().stream()
+                    .anyMatch(i -> i.getInductionId().equals(matching.getInductionId()));
+            if (!workerInPermit) {
+                throw new IllegalArgumentException("WORKER_NOT_IN_PERMIT");
+            }
+            resolvedPermitId = permit.getPermitId();
+            permitDescription = permit.getDescription();
+        }
+
         return TravauxEntryVerifyResponse.builder()
                 .travauxId(travaux.getTravauxId())
                 .inductionId(matching.getInductionId())
@@ -418,6 +465,8 @@ public class TravauxService {
                 .siteId(travaux.getSite().getSiteId())
                 .siteName(travaux.getSite().getName())
                 .missingHabilitations(missing)
+                .permitId(resolvedPermitId)
+                .permitDescription(permitDescription)
                 .build();
     }
 
@@ -474,6 +523,13 @@ public class TravauxService {
                         .status(p.getStatus())
                         .hasFile(p.getPermitFileData() != null)
                         .createdAt(p.getCreatedAt())
+                        .intervenants(p.getIntervenants().stream()
+                                .map(i -> TravauxResponse.PermitIntervenantDto.builder()
+                                        .inductionId(i.getInductionId())
+                                        .firstName(i.getFirstName())
+                                        .lastName(i.getLastName())
+                                        .build())
+                                .toList())
                         .build())
                 .toList();
 

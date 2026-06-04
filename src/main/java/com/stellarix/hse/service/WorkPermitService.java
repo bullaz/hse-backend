@@ -2,7 +2,9 @@ package com.stellarix.hse.service;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -15,11 +17,10 @@ import com.stellarix.hse.dto.WorkPermitResponse;
 import com.stellarix.hse.dto.WorkPermitVerifyResponse;
 import com.stellarix.hse.entity.HseInduction;
 import com.stellarix.hse.entity.PermitType;
-import com.stellarix.hse.entity.Site;
+import com.stellarix.hse.entity.Travaux;
 import com.stellarix.hse.entity.WorkPermit;
-import com.stellarix.hse.repository.HseInductionRepository;
 import com.stellarix.hse.repository.PermitTypeRepository;
-import com.stellarix.hse.repository.SiteRepository;
+import com.stellarix.hse.repository.TravauxRepository;
 import com.stellarix.hse.repository.WorkPermitRepository;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -35,30 +36,32 @@ public class WorkPermitService {
     private static final SecureRandom RANDOM = new SecureRandom();
 
     private final WorkPermitRepository repository;
-    private final HseInductionRepository inductionRepository;
-    private final SiteRepository siteRepository;
+    private final TravauxRepository travauxRepository;
     private final PermitTypeRepository permitTypeRepository;
     private final EmailService emailService;
 
     @Transactional
     public WorkPermitResponse create(WorkPermitRequest request) {
-        HseInduction induction = inductionRepository.findById(request.getInductionId())
-                .orElseThrow(() -> new EntityNotFoundException("Induction not found: " + request.getInductionId()));
+        Travaux travaux = travauxRepository.findById(request.getTravauxId())
+                .orElseThrow(() -> new EntityNotFoundException("Travaux not found: " + request.getTravauxId()));
 
-        Site site = siteRepository.findById(request.getSiteId())
-                .orElseThrow(() -> new EntityNotFoundException("Site not found: " + request.getSiteId()));
+        if (!"TRAVAUX".equals(travaux.getAccessType())) {
+            throw new IllegalArgumentException("Permits can only be created for TRAVAUX dossiers, not VISITE");
+        }
+        if ("CLOSED".equals(travaux.getStatus())) {
+            throw new IllegalStateException("Cannot add permit to a closed travaux");
+        }
 
-        List<String> missingHabilitations = (site.getZoneType() != null
-                ? site.getZoneType().getHabilitations()
-                : List.<com.stellarix.hse.entity.Habilitation>of()).stream()
-                .filter(h -> induction.getHabilitations().stream()
-                        .noneMatch(ih -> ih.getHabilitationId().equals(h.getHabilitationId())))
-                .map(h -> h.getCode())
-                .toList();
-
-        if (!missingHabilitations.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "Worker is missing required habilitations for this site: " + String.join(", ", missingHabilitations));
+        List<HseInduction> intervenants;
+        if (request.getInductionIds() == null || request.getInductionIds().isEmpty()) {
+            intervenants = new ArrayList<>(travaux.getIntervenants());
+        } else {
+            intervenants = travaux.getIntervenants().stream()
+                    .filter(i -> request.getInductionIds().contains(i.getInductionId()))
+                    .collect(Collectors.toList());
+            if (intervenants.isEmpty()) {
+                throw new IllegalArgumentException("None of the provided induction IDs match the travaux intervenants");
+            }
         }
 
         PermitType permitType = null;
@@ -69,17 +72,18 @@ public class WorkPermitService {
 
         WorkPermit permit = new WorkPermit();
         permit.setPermitId(generateUniquePermitId());
-        permit.setInduction(induction);
-        permit.setSite(site);
+        permit.setTravaux(travaux);
+        permit.setSite(travaux.getSite());
         permit.setDescription(request.getDescription());
         permit.setStartDatetime(request.getStartDatetime());
         permit.setEndDatetime(request.getEndDatetime());
         permit.setPermitType(permitType);
+        permit.setIntervenants(intervenants);
         WorkPermit saved = repository.save(permit);
 
-        emailService.sendPermitEmail(saved);
+        emailService.sendPermitEmailToAll(saved);
 
-        return toResponse(saved, missingHabilitations);
+        return toResponse(saved, List.of());
     }
 
     public PageResponse<WorkPermitResponse> getAll(String name, Integer siteId, String status,
@@ -109,9 +113,7 @@ public class WorkPermitService {
         permit.setPermitFileData(data);
         permit.setPermitFileContentType(contentType != null ? contentType : "application/octet-stream");
         repository.save(permit);
-        if (permit.getInduction() != null) {
-            emailService.sendPermitEmail(permit);
-        }
+        emailService.sendPermitEmailToAll(permit);
     }
 
     /** Mobile endpoint — validates permit ID, site match, and time window (start−1h ≤ now ≤ end). */
@@ -162,6 +164,11 @@ public class WorkPermitService {
                         permit.getInduction().getPhone())
                 : null;
 
+        List<WorkPermitResponse.PersonDto> intervenants = permit.getIntervenants().stream()
+                .map(i -> new WorkPermitResponse.PersonDto(i.getInductionId(), i.getFirstName(),
+                        i.getLastName(), i.getEmail(), i.getPhone()))
+                .toList();
+
         String zoneTypeLabel = permit.getSite().getZoneType() != null
                 ? permit.getSite().getZoneType().getLabel() : null;
         WorkPermitResponse.SiteDto site = new WorkPermitResponse.SiteDto(
@@ -180,6 +187,7 @@ public class WorkPermitService {
         return WorkPermitResponse.builder()
                 .permitId(permit.getPermitId())
                 .person(person)
+                .intervenants(intervenants)
                 .site(site)
                 .description(permit.getDescription())
                 .permitType(permitTypeDto)
@@ -193,16 +201,17 @@ public class WorkPermitService {
     }
 
     private WorkPermitVerifyResponse fromPermit(WorkPermit permit, boolean valid, String reason) {
+        List<WorkPermitVerifyResponse.IntervenantDto> intervenants = permit.getIntervenants().stream()
+                .map(i -> new WorkPermitVerifyResponse.IntervenantDto(i.getInductionId(), i.getFirstName(), i.getLastName()))
+                .toList();
         return WorkPermitVerifyResponse.builder()
                 .valid(valid)
                 .reason(reason)
                 .permitId(permit.getPermitId())
-                .inductionId(permit.getInduction() != null ? permit.getInduction().getInductionId() : null)
-                .firstName(permit.getInduction() != null ? permit.getInduction().getFirstName() : null)
-                .lastName(permit.getInduction() != null ? permit.getInduction().getLastName() : null)
                 .siteName(permit.getSite().getName())
                 .startDatetime(permit.getStartDatetime())
                 .endDatetime(permit.getEndDatetime())
+                .intervenants(intervenants)
                 .build();
     }
 

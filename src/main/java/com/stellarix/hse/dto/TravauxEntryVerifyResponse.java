@@ -11,8 +11,10 @@ import lombok.Data;
 public class TravauxEntryVerifyResponse {
     private UUID travauxId;
     private UUID inductionId;
-    private String intent;       // "WORK" or "VISIT" derived from accessType
+    private String intent;
     private Integer siteId;
     private String siteName;
-    private List<String> missingHabilitations; // empty = all good
+    private List<String> missingHabilitations;
+    private String permitId;
+    private String permitDescription;
 }
