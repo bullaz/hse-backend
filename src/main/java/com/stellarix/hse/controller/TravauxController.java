@@ -90,9 +90,11 @@ public class TravauxController {
             @PathVariable UUID id,
             @RequestParam(required = false) Integer permitTypeId,
             @RequestParam(required = false) String description,
+            @RequestParam(required = false) String startDatetime,
+            @RequestParam(required = false) String endDatetime,
             @RequestParam(required = false) List<UUID> inductionIds,
             @RequestPart(value = "file", required = false) MultipartFile file) {
-        service.createPermitForTravaux(id, permitTypeId, description, inductionIds, file);
+        service.createPermitForTravaux(id, permitTypeId, description, startDatetime, endDatetime, inductionIds, file);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 

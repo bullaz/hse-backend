@@ -207,7 +207,8 @@ public class TravauxService {
 
         String closureUrl = frontendUrl.replaceAll("/$", "") + "/travaux/cloture?token=" + token;
         emailService.sendTravauxPermitsEmail(travaux, permits, closureUrl);
-        log.info("Permits sent to {} for travaux {}", travaux.getSuperviseurEmail(), id);
+        permits.forEach(emailService::sendPermitEmailToAll);
+        log.info("Permits sent to supervisor {} and all intervenants for travaux {}", travaux.getSuperviseurEmail(), id);
     }
 
     // ── Activate ──────────────────────────────────────────────────────────────
@@ -329,7 +330,8 @@ public class TravauxService {
 
     @Transactional
     public void createPermitForTravaux(UUID travauxId, Integer permitTypeId,
-            String description, List<UUID> inductionIds, MultipartFile file) {
+            String description, String startDatetime, String endDatetime,
+            List<UUID> inductionIds, MultipartFile file) {
         Travaux travaux = findById(travauxId);
         if (!"TRAVAUX".equals(travaux.getAccessType())) {
             throw new IllegalArgumentException("Permits can only be created for TRAVAUX dossiers, not VISITE");
@@ -362,8 +364,13 @@ public class TravauxService {
         permit.setTravaux(travaux);
         permit.setDescription(description);
         permit.setPermitType(permitType);
-        permit.setStartDatetime(travaux.getDateDebut());
-        permit.setEndDatetime(travaux.getDateFin());
+        java.time.format.DateTimeFormatter dtFmt = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
+        permit.setStartDatetime(startDatetime != null && startDatetime.length() >= 16
+                ? java.time.LocalDateTime.parse(startDatetime.substring(0, 16), dtFmt)
+                : travaux.getDateDebut());
+        permit.setEndDatetime(endDatetime != null && endDatetime.length() >= 16
+                ? java.time.LocalDateTime.parse(endDatetime.substring(0, 16), dtFmt)
+                : travaux.getDateFin());
         permit.setIntervenants(intervenants);
 
         if (file != null && !file.isEmpty()) {
