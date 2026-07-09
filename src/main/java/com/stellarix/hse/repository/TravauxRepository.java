@@ -17,6 +17,12 @@ public interface TravauxRepository extends JpaRepository<Travaux, UUID> {
 
     Optional<Travaux> findByTicketNoIgnoreCaseAndStatus(String ticketNo, String status);
 
+    // Ticket number is a permanent identifier, never reused — a CLOSED dossier keeps
+    // its number reserved forever, same as any other primary key.
+    boolean existsByTicketNoIgnoreCase(String ticketNo);
+
+    boolean existsByTicketNoIgnoreCaseAndTravauxIdNot(String ticketNo, UUID excludeId);
+
     @Query("""
             SELECT t FROM Travaux t
             WHERE (:status IS NULL OR t.status = :status)

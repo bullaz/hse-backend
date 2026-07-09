@@ -9,6 +9,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.stellarix.hse.entity.Hse;
 import com.stellarix.hse.repository.HseRepository;
@@ -27,6 +28,7 @@ public class AccountService implements UserDetailsService {
 
     private final HseRepository hseRepository;
     private final PasswordEncoder encoder;
+    private final RefreshTokenService refreshTokenService;
 
     @Override
     public UserDetails loadUserByUsername(String usernameOrEmail) throws UsernameNotFoundException {
@@ -58,14 +60,22 @@ public class AccountService implements UserDetailsService {
         return Math.max(1, (seconds + 59) / 60);
     }
 
+    @Transactional
     public void recordFailedAttempt(Hse user) {
-        int attempts = user.getFailedAttempts() + 1;
-        user.setFailedAttempts(attempts);
-        if (attempts >= MAX_ATTEMPTS) {
-            user.setLockedUntil(LocalDateTime.now().plusMinutes(LOCK_MINUTES));
-            log.warn("Account locked after {} failed attempts: {}", attempts, user.getEmail());
+        // Atomic DB-level increment — a Java-side read-then-write here would lose
+        // updates under concurrent failed logins, letting an attacker outrun lockout.
+        // @Modifying queries need an explicit transaction — unlike save()/findById(),
+        // they don't get one implicitly from Spring Data's default repository proxy.
+        hseRepository.incrementFailedAttempts(user.getHseId());
+        Hse fresh = hseRepository.findById(user.getHseId())
+                .orElseThrow(() -> new IllegalStateException("User disappeared mid-request: " + user.getHseId()));
+        user.setFailedAttempts(fresh.getFailedAttempts());
+        if (fresh.getFailedAttempts() >= MAX_ATTEMPTS) {
+            fresh.setLockedUntil(LocalDateTime.now().plusMinutes(LOCK_MINUTES));
+            hseRepository.save(fresh);
+            log.warn("Account locked after {} failed attempts: {}", fresh.getFailedAttempts(), fresh.getEmail());
         }
-        hseRepository.save(user);
+        user.setLockedUntil(fresh.getLockedUntil());
     }
 
     public void resetFailedAttempts(Hse user) {
@@ -90,6 +100,10 @@ public class AccountService implements UserDetailsService {
         user.setPassword(encoder.encode(newPassword));
         user.setMustChangePassword(false);
         hseRepository.save(user);
+        // A password change should cut off any other session's refresh path immediately,
+        // not just the account's own future logins — most relevant right after a suspected
+        // compromise, which is exactly when this matters most.
+        refreshTokenService.revokeAllForUser(user.getEmail());
     }
 
     public void disableUser(Hse user) {

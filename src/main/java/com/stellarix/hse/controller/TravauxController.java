@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -61,6 +62,27 @@ public class TravauxController {
             @RequestPart("data") TravauxRequest request,
             @RequestPart(value = "modop", required = false) MultipartFile modop) {
         return ResponseEntity.ok(service.update(id, request, modop));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+        service.delete(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/intervenants/{inductionId}")
+    public ResponseEntity<TravauxResponse> addIntervenant(@PathVariable UUID id, @PathVariable UUID inductionId) {
+        return ResponseEntity.ok(service.addIntervenant(id, inductionId));
+    }
+
+    @PostMapping("/{id}/intervenants/{inductionId}/suspend")
+    public ResponseEntity<TravauxResponse> suspendIntervenant(@PathVariable UUID id, @PathVariable UUID inductionId) {
+        return ResponseEntity.ok(service.suspendIntervenant(id, inductionId));
+    }
+
+    @PostMapping("/{id}/intervenants/{inductionId}/reactivate")
+    public ResponseEntity<TravauxResponse> reactivateIntervenant(@PathVariable UUID id, @PathVariable UUID inductionId) {
+        return ResponseEntity.ok(service.reactivateIntervenant(id, inductionId));
     }
 
     @PostMapping("/{id}/send-permits")
@@ -142,8 +164,8 @@ public class TravauxController {
     }
 
     @PatchMapping("/{id}/reject-closure")
-    public ResponseEntity<Void> rejectClosure(@PathVariable UUID id) {
-        service.rejectClosure(id);
+    public ResponseEntity<Void> rejectClosure(@PathVariable UUID id, @RequestParam(required = false) String reason) {
+        service.rejectClosure(id, reason);
         return ResponseEntity.ok().build();
     }
 }

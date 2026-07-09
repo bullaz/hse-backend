@@ -51,6 +51,11 @@ public class RefreshTokenService {
         return issue(email);
     }
 
+    @Transactional
+    public void revokeAllForUser(String email) {
+        repository.revokeAllForEmail(email);
+    }
+
     @Scheduled(cron = "0 0 2 * * *")
     @Transactional
     public void purgeExpiredAndRevoked() {

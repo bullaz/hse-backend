@@ -56,7 +56,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 filterChain.doFilter(request, response);
                 return;
             }
-            if (tokenState) {
+            // userDetails is reloaded fresh from the DB on every request, so this reflects
+            // the account's *current* state — deactivating or locking a user takes effect
+            // immediately instead of waiting out the token's remaining lifetime.
+            if (tokenState && userDetails.isEnabled() && userDetails.isAccountNonLocked()) {
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails,
                         null,

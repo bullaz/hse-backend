@@ -56,6 +56,10 @@ public class Hse {
     @Column(name = "totp_enabled", nullable = false)
     private boolean totpEnabled = false;
 
+    // Last accepted TOTP time-step, so the same code can't be replayed within its window.
+    @Column(name = "totp_last_used_step")
+    private Long totpLastUsedStep;
+
     @Column(name = "is_admin", nullable = false)
     private boolean isAdmin = false;
 

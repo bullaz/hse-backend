@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.stellarix.hse.dto.MissingPpeStatDto;
+import com.stellarix.hse.dto.PpeItemResultRequest;
 import com.stellarix.hse.dto.PpeVerificationRequest;
 import com.stellarix.hse.dto.TopWorkerStatDto;
 import com.stellarix.hse.dto.VerificationLogResponse;
@@ -36,6 +37,7 @@ import com.stellarix.hse.entity.WorkPermit;
 import com.stellarix.hse.repository.HseInductionRepository;
 import com.stellarix.hse.repository.PpeItemRepository;
 import com.stellarix.hse.repository.PpeItemResultRepository;
+import com.stellarix.hse.repository.PpeRequirementRepository;
 import com.stellarix.hse.repository.PpeVerificationLogRepository;
 import com.stellarix.hse.repository.RejectedImageRepository;
 import com.stellarix.hse.repository.SiteRepository;
@@ -63,6 +65,7 @@ public class PpeVerificationService {
     private final HseInductionRepository inductionRepository;
     private final WorkPermitRepository workPermitRepository;
     private final TravauxRepository travauxRepository;
+    private final PpeRequirementRepository requirementRepository;
     private final SimpMessagingTemplate messagingTemplate;
 
     @PersistenceContext
@@ -78,6 +81,8 @@ public class PpeVerificationService {
         Site site = siteRepository.findById(request.getSiteId())
                 .orElseThrow(() -> new EntityNotFoundException("Site not found: " + request.getSiteId()));
 
+        assertPpeRequirementsMet(site, request.getIntent(), request.getStatus(), request.getItemResults());
+
         HseInduction induction = inductionRepository.findById(request.getInductionId())
                 .orElseThrow(() -> new EntityNotFoundException("Induction not found: " + request.getInductionId()));
 
@@ -88,6 +93,7 @@ public class PpeVerificationService {
         log.setSite(site);
         log.setStatus(request.getStatus());
         log.setCapturedAt(request.getCapturedAt());
+        log.setDeviceTimeSuspicious(isDeviceTimeSuspicious(request));
         log.setOffline(request.isOffline());
         log.setSyncedAt(request.isOffline() ? LocalDateTime.now() : null);
         log.setDescription(request.getDescription());
@@ -122,7 +128,9 @@ public class PpeVerificationService {
         if ("REJECTED".equals(request.getStatus())) {
             List<String> causes = request.getItemResults().stream()
                     .filter(r -> !r.isDetected())
-                    .map(r -> (r.isWrongType() ? "WRONG_TYPE:" : "MISSING_PPE:") + r.getPpeItemCode())
+                    .map(r -> (r.isWrongType() ? "WRONG_TYPE:"
+                            : r.isPairIncomplete() ? "PARTIAL_PAIR:"
+                            : "MISSING_PPE:") + r.getPpeItemCode())
                     .toList();
             saved.setRejectionCauses(causes);
             logRepository.save(saved);
@@ -132,6 +140,49 @@ public class PpeVerificationService {
         messagingTemplate.convertAndSend("/topic/verifications", toResponse(saved));
 
         return saved;
+    }
+
+    /**
+     * Server-side backstop: a submission can't be accepted as VALIDATED unless it actually
+     * covers every PPE item the authoritative matrix (zone type + intent) requires for this
+     * site, regardless of what the submitting device believes was checked.
+     */
+    private void assertPpeRequirementsMet(Site site, String intent, String status, List<PpeItemResultRequest> itemResults) {
+        if (!"VALIDATED".equals(status) || site.getZoneType() == null) {
+            return;
+        }
+        List<String> requiredCodes = requirementRepository
+                .findByZoneType_ZoneTypeIdAndIntent(site.getZoneType().getZoneTypeId(), intent).stream()
+                .map(r -> r.getPpeItem().getCode())
+                .toList();
+
+        Set<String> detectedCodes = itemResults.stream()
+                .filter(PpeItemResultRequest::isDetected)
+                .map(PpeItemResultRequest::getPpeItemCode)
+                .collect(java.util.stream.Collectors.toSet());
+
+        List<String> missing = requiredCodes.stream().filter(c -> !detectedCodes.contains(c)).toList();
+        if (!missing.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Cannot accept VALIDATED status — missing required PPE item(s): " + String.join(", ", missing));
+        }
+    }
+
+    private static final java.time.Duration MAX_CLOCK_SKEW = java.time.Duration.ofMinutes(10);
+
+    /**
+     * Anti-cheat: capturedAt is set by the device and isn't otherwise verified. A capture
+     * claiming to be from the future is always implausible; a live (non-offline) capture
+     * claiming to be far in the past suggests a manipulated device clock. A large gap is
+     * normal and expected for offline captures synced later, so it's only checked live.
+     */
+    private boolean isDeviceTimeSuspicious(PpeVerificationRequest request) {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime capturedAt = request.getCapturedAt();
+        if (capturedAt.isAfter(now.plus(MAX_CLOCK_SKEW))) {
+            return true;
+        }
+        return !request.isOffline() && capturedAt.isBefore(now.minus(MAX_CLOCK_SKEW));
     }
 
     /**
@@ -239,11 +290,6 @@ public class PpeVerificationService {
         logRepository.save(log);
     }
 
-    /** Batch sync for offline results — idempotent (duplicate logIds are ignored). */
-    @Transactional
-    public void syncOffline(List<PpeVerificationRequest> pending) {
-        pending.forEach(this::submit);
-    }
 
     // --- Backoffice queries ---
 
@@ -346,6 +392,7 @@ public class PpeVerificationService {
                 .permitTypeLabel(permitTypeLabel)
                 .description(log.getDescription())
                 .hasCompositeImage(hasImage)
+                .deviceTimeSuspicious(log.isDeviceTimeSuspicious())
                 .build();
     }
 }

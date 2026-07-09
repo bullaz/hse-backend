@@ -59,6 +59,11 @@ public class PpeVerificationLog {
     @Column(name = "synced_at")
     private LocalDateTime syncedAt;
 
+    // True when capturedAt (set by the device) is implausible relative to server time —
+    // e.g. a manipulated device clock. See PpeVerificationService.isDeviceTimeSuspicious.
+    @Column(name = "device_time_suspicious", nullable = false)
+    private boolean deviceTimeSuspicious = false;
+
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 

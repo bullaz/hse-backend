@@ -27,6 +27,7 @@ public class TravauxResponse {
     private List<String> impactTypes;
     private boolean hasModop;
     private String status;
+    private boolean permitEmailFailed;
     private int permitCount;
     private int intervenantCount;
     private LocalDateTime createdAt;
@@ -36,7 +37,7 @@ public class TravauxResponse {
     private List<IntervenantDto> intervenants;
     private List<PermitSummaryDto> permits;
     private List<EntryLogDto> entryLogs;
-    private ClosureFormDto closureForm;
+    private List<ClosureFormDto> closureForms;
 
     @Data
     @Builder
@@ -46,6 +47,7 @@ public class TravauxResponse {
         private String lastName;
         private String email;
         private String work;
+        private boolean suspended;
     }
 
     @Data
@@ -89,5 +91,7 @@ public class TravauxResponse {
         private String observations;
         private String signatureData;
         private LocalDateTime submittedAt;
+        private String status;
+        private String rejectionReason;
     }
 }

@@ -26,8 +26,6 @@ public class WorkPermitResponse {
     private String status;
     private boolean hasFile;
     private LocalDateTime createdAt;
-    /** Non-null only on creation — codes of habilitations the person lacks for this site. */
-    private List<String> missingHabilitations;
 
     @Data @AllArgsConstructor @NoArgsConstructor
     public static class PersonDto {

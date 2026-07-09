@@ -21,6 +21,8 @@ import com.stellarix.hse.repository.HabilitationRepository;
 import com.stellarix.hse.repository.HseInductionRepository;
 import com.stellarix.hse.repository.InductionRoleRepository;
 import com.stellarix.hse.repository.PpeVerificationLogRepository;
+import com.stellarix.hse.repository.TravauxIntervenantRepository;
+import com.stellarix.hse.repository.WorkPermitRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +36,8 @@ public class HseInductionService {
     private final HabilitationRepository habilitationRepository;
     private final CompanyRepository companyRepository;
     private final InductionRoleRepository inductionRoleRepository;
+    private final TravauxIntervenantRepository travauxIntervenantRepository;
+    private final WorkPermitRepository workPermitRepository;
 
     public Page<HseInduction> getAll(int page, int size) {
         return repository.findAll(PageRequest.of(page, size, Sort.by("registeredAt").descending()));
@@ -157,6 +161,21 @@ public class HseInductionService {
         if (logRepository.existsByInduction_InductionId(id)) {
             throw new IllegalStateException("Cannot delete: this person has existing verification logs.");
         }
+
+        // Same reasoning as ZoneTypeService/HabilitationService.delete: check first so the
+        // client gets a specific, actionable reason instead of a null-message
+        // DataIntegrityViolationException from the FK constraints below.
+        long travauxCount = travauxIntervenantRepository.countByInduction_InductionId(id);
+        long permitCount = workPermitRepository.countByIntervenants_InductionId(id);
+        if (travauxCount > 0 || permitCount > 0) {
+            List<String> reasons = new ArrayList<>();
+            if (travauxCount > 0) reasons.add(travauxCount + " demande(s) d'accès");
+            if (permitCount > 0) reasons.add(permitCount + " permis de travail");
+            throw new IllegalStateException(
+                    "Impossible de supprimer cette personne : intervenant sur "
+                            + String.join(" et ", reasons) + ".");
+        }
+
         repository.deleteById(id);
     }
 }

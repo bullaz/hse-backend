@@ -7,4 +7,5 @@ import com.stellarix.hse.entity.ZoneType;
 
 @Repository
 public interface ZoneTypeRepository extends JpaRepository<ZoneType, Integer> {
+    long countByHabilitations_HabilitationId(Integer habilitationId);
 }

@@ -15,11 +15,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -32,7 +29,7 @@ import org.hibernate.annotations.Check;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@ToString(exclude = {"permits", "intervenants", "entryLogs", "closureForm"})
+@ToString(exclude = {"permits", "intervenantLinks", "entryLogs", "closureForms"})
 @Table(name = "travaux")
 public class Travaux {
 
@@ -41,11 +38,17 @@ public class Travaux {
     @Column(name = "travaux_id", updatable = false, nullable = false)
     private UUID travauxId;
 
+    // Guards against concurrent state-transition races (e.g. two staff both clicking
+    // activate/validate-closure/reject-closure on the same dossier at once).
+    @jakarta.persistence.Version
+    @Column(name = "version", nullable = false)
+    private Long version = 0L;
+
     @Column(name = "ticket_no", nullable = false, length = 50)
     private String ticketNo;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "company_id")
+    @JoinColumn(name = "company_id", nullable = false)
     private Company company;
 
     @ManyToOne(fetch = FetchType.EAGER)
@@ -101,19 +104,43 @@ public class Travaux {
     @Column(name = "closure_token_used", nullable = false)
     private boolean closureTokenUsed = false;
 
+    // Set when the last permit-dispatch email (send-to-supervisor or resend-on-reject)
+    // failed — the async send has no other way to tell HSE something went wrong.
+    @Column(name = "permit_email_failed", nullable = false)
+    private boolean permitEmailFailed = false;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "closed_at")
     private LocalDateTime closedAt;
 
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-            name = "travaux_intervenants",
-            joinColumns = @JoinColumn(name = "travaux_id"),
-            inverseJoinColumns = @JoinColumn(name = "induction_id")
-    )
-    private List<HseInduction> intervenants = new ArrayList<>();
+    // Was a plain @ManyToMany until suspend/reactivate needed a per-membership
+    // attribute — see TravauxIntervenant. getIntervenants()/setIntervenants() below
+    // preserve the old "flat list of people" call shape for existing callers that
+    // only care who's currently active on the dossier.
+    @OneToMany(mappedBy = "travaux", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<TravauxIntervenant> intervenantLinks = new ArrayList<>();
+
+    /** Active (non-suspended) intervenants — who's actually allowed to enter or be added to a new permit. */
+    public List<HseInduction> getIntervenants() {
+        return intervenantLinks.stream()
+                .filter(link -> !link.isSuspended())
+                .map(TravauxIntervenant::getInduction)
+                .toList();
+    }
+
+    /** Full replace, non-suspended — used by create() and the DRAFT-only update(). */
+    public void setIntervenants(List<HseInduction> inductions) {
+        intervenantLinks.clear();
+        for (HseInduction induction : inductions) {
+            TravauxIntervenant link = new TravauxIntervenant();
+            link.setTravaux(this);
+            link.setInduction(induction);
+            link.setSuspended(false);
+            intervenantLinks.add(link);
+        }
+    }
 
     @OneToMany(mappedBy = "travaux", fetch = FetchType.LAZY)
     private List<WorkPermit> permits = new ArrayList<>();
@@ -121,8 +148,8 @@ public class Travaux {
     @OneToMany(mappedBy = "travaux", fetch = FetchType.LAZY)
     private List<PpeVerificationLog> entryLogs = new ArrayList<>();
 
-    @OneToOne(mappedBy = "travaux", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private TravauxClosureForm closureForm;
+    @OneToMany(mappedBy = "travaux", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<TravauxClosureForm> closureForms = new ArrayList<>();
 
     @PrePersist
     void prePersist() {

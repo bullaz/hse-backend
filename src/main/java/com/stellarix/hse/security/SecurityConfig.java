@@ -10,23 +10,31 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import com.stellarix.hse.filter.JwtAuthFilter;
+import com.stellarix.hse.security.UserInfoDetails;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
+import java.util.function.Supplier;
 
 @Slf4j
 @Configuration
@@ -42,9 +50,34 @@ public class SecurityConfig {
     private final PasswordEncoder passwordEncoder;
     
     @Value("${frontend.url}")
-    private String frontendUrl; 
-    
-    
+    private String frontendUrl;
+
+    // Endpoints an HSE account must still be able to reach while onboarding
+    // (forced password change / mandatory 2FA setup) is incomplete.
+    private static final Set<String> ONBOARDING_ALLOWED_PATHS = Set.of(
+            "/hse/users/me",
+            "/hse/users/change-password",
+            "/hse/users/totp/setup",
+            "/hse/users/totp/enable",
+            "/hse/logout"
+    );
+
+    private static AuthorizationDecision checkHseAccess(Supplier<Authentication> authentication, RequestAuthorizationContext context) {
+        Authentication auth = authentication.get();
+        boolean hasHseAuthority = auth != null && auth.isAuthenticated()
+                && auth.getAuthorities().stream().anyMatch(a -> "HSE".equals(a.getAuthority()));
+        if (!hasHseAuthority) {
+            return new AuthorizationDecision(false);
+        }
+        if (auth.getPrincipal() instanceof UserInfoDetails uid
+                && (uid.isMustChangePassword() || !uid.isTotpEnabled())
+                && !ONBOARDING_ALLOWED_PATHS.contains(context.getRequest().getRequestURI())) {
+            return new AuthorizationDecision(false);
+        }
+        return new AuthorizationDecision(true);
+    }
+
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -71,13 +104,22 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/hse/verifications/*/images").permitAll()
                 .requestMatchers(HttpMethod.GET, "/hse/verifications/*/composite-image").permitAll()
                 .requestMatchers(HttpMethod.PATCH, "/hse/verifications/*/certify").permitAll()
-                // Everything else requires HSE authority
-                .requestMatchers("/hse/**").hasAuthority("HSE")
+                // Everything else requires HSE authority, and — unless it's part of the
+                // onboarding flow itself — a completed password change and 2FA setup.
+                .requestMatchers("/hse/**").access(SecurityConfig::checkHseAccess)
                 .anyRequest().authenticated()
             )
 
+            // Without this, Spring Security's default for "no/invalid credentials on a
+            // protected route" is 403 (there's no formLogin/httpBasic to derive a proper
+            // 401 entry point from) — which breaks the frontend's refresh-on-401 interceptor
+            // and is semantically wrong (401 = who are you, 403 = you can't do that).
+            // Authenticated-but-insufficient-authority requests (e.g. onboarding incomplete,
+            // wrong role) are unaffected — those still go through the AccessDeniedHandler (403).
+            .exceptionHandling(ex -> ex.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+
             .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            
+
             .authenticationProvider(authenticationProvider())
             
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

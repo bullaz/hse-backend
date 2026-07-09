@@ -20,6 +20,8 @@ public class UserInfoDetails implements UserDetails {
     private final List<GrantedAuthority> authorities;
     private final boolean accountNonLocked;
     private final boolean enabled;
+    private final boolean mustChangePassword;
+    private final boolean totpEnabled;
 
     public UserInfoDetails(Hse user) {
         this.username       = user.getEmail();
@@ -27,12 +29,17 @@ public class UserInfoDetails implements UserDetails {
         this.enabled        = user.isActive();
         this.accountNonLocked = user.getLockedUntil() == null
                 || user.getLockedUntil().isBefore(LocalDateTime.now());
+        this.mustChangePassword = user.isMustChangePassword();
+        this.totpEnabled        = user.isTotpEnabled();
 
         List<GrantedAuthority> auths = new ArrayList<>();
         auths.add(new SimpleGrantedAuthority("HSE"));
         if (user.isAdmin()) auths.add(new SimpleGrantedAuthority("HSE_ADMIN"));
         this.authorities = List.copyOf(auths);
     }
+
+    public boolean isMustChangePassword()                                     { return mustChangePassword; }
+    public boolean isTotpEnabled()                                            { return totpEnabled; }
 
     @Override public Collection<? extends GrantedAuthority> getAuthorities() { return authorities; }
     @Override public String getPassword()                                     { return password; }

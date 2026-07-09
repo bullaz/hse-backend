@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.stellarix.hse.entity.Hse;
 import com.stellarix.hse.service.AccountService;
 import com.stellarix.hse.service.EmailService;
+import com.stellarix.hse.utils.Utils;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
@@ -81,7 +82,8 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
         }
 
-        emailService.sendWelcomeEmail(req.getEmail(), req.getNom(), req.getPrenom(), req.getUsername(), tempPassword);
+        emailService.sendWelcomeEmail(req.getEmail(), req.getNom(), req.getPrenom(), req.getUsername(), tempPassword,
+                Utils.currentUserEmail());
         log.info("HSE account created for {}", req.getEmail());
 
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -124,6 +126,10 @@ public class AdminController {
     public ResponseEntity<?> enableUser(@PathVariable Integer id) {
         try {
             Hse user = accountService.findById(id);
+            if (user.isAdmin()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("error", "Impossible de modifier un compte administrateur"));
+            }
             accountService.enableUser(user);
             log.info("Account re-enabled: {}", user.getEmail());
             return ResponseEntity.ok(Map.of("message", "Compte réactivé"));

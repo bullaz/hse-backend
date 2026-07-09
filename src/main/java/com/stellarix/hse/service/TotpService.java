@@ -33,12 +33,25 @@ public class TotpService {
     }
 
     public boolean verifyCode(String secret, String code) {
-        if (secret == null || code == null || code.length() != CODE_DIGITS) return false;
+        return verifyCodeStep(secret, code, null) >= 0;
+    }
+
+    /**
+     * Same check as {@link #verifyCode}, but also rejects a code matching a time-step
+     * that's already been accepted before — without this, a valid code can be replayed
+     * as many times as requested within its ~60s window.
+     * @return the matched time-step (to persist as the new "last used"), or -1 if invalid.
+     */
+    public long verifyCodeStep(String secret, String code, Long lastUsedStep) {
+        if (secret == null || code == null || code.length() != CODE_DIGITS) return -1;
         long timeIndex = System.currentTimeMillis() / 1000 / TIME_STEP;
         for (int i = -WINDOW; i <= WINDOW; i++) {
-            if (generateCode(secret, timeIndex + i).equals(code)) return true;
+            long step = timeIndex + i;
+            if ((lastUsedStep == null || step > lastUsedStep) && generateCode(secret, step).equals(code)) {
+                return step;
+            }
         }
-        return false;
+        return -1;
     }
 
     private String generateCode(String secret, long counter) {

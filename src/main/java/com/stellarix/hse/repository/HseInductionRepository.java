@@ -16,4 +16,6 @@ public interface HseInductionRepository extends JpaRepository<HseInduction, UUID
     Optional<HseInduction> findByFirstNameIgnoreCaseAndLastNameIgnoreCase(String firstName, String lastName);
 
     Optional<HseInduction> findByFirstNameIgnoreCaseAndLastNameIgnoreCaseAndCinNumberIgnoreCase(String firstName, String lastName, String cinNumber);
+
+    long countByHabilitations_HabilitationId(Integer habilitationId);
 }

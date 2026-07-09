@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -74,7 +75,7 @@ public class PpeVerificationController {
                 "ppeLabel", i.ppeLabel(),
                 "detected", i.detected(),
                 "confidence", i.confidence(),
-                "partialWarning", i.partialWarning(),
+                "pairIncomplete", i.pairIncomplete(),
                 "wrongType", i.wrongType()
             )).toList();
 
@@ -88,7 +89,14 @@ public class PpeVerificationController {
     /** Mobile submits a completed PPE verification result. */
     @PostMapping
     public ResponseEntity<VerificationLogResponse> submit(@Valid @RequestBody PpeVerificationRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.toResponse(service.submit(request)));
+        try {
+            return ResponseEntity.status(HttpStatus.CREATED).body(service.toResponse(service.submit(request)));
+        } catch (DataIntegrityViolationException e) {
+            // Lost a race with a concurrent submission of the same logId — that request's
+            // insert already committed, so retrying hits the idempotent existsById fast
+            // path and returns its result instead of erroring this one out.
+            return ResponseEntity.status(HttpStatus.CREATED).body(service.toResponse(service.submit(request)));
+        }
     }
 
     /**
@@ -126,10 +134,27 @@ public class PpeVerificationController {
                 .body(data);
     }
 
-    /** Mobile batch-syncs offline verification results when connectivity is restored. */
+    /**
+     * Mobile batch-syncs offline verification results when connectivity is restored.
+     * Each item is submitted independently (each call is its own transaction, since it
+     * goes through the service proxy) so one bad item is skipped and logged instead of
+     * rolling back — and therefore permanently blocking — every other item in the batch.
+     */
     @PostMapping("/sync")
     public ResponseEntity<Void> sync(@Valid @RequestBody List<@Valid PpeVerificationRequest> pending) {
-        service.syncOffline(pending);
+        for (PpeVerificationRequest item : pending) {
+            try {
+                service.submit(item);
+            } catch (DataIntegrityViolationException e) {
+                try {
+                    service.submit(item); // lost a race on a concurrent identical logId — retry once
+                } catch (Exception retryEx) {
+                    log.warn("Offline sync item {} failed after retry, skipping: {}", item.getLogId(), retryEx.getMessage());
+                }
+            } catch (Exception e) {
+                log.warn("Offline sync item {} failed, skipping (rest of batch unaffected): {}", item.getLogId(), e.getMessage());
+            }
+        }
         return ResponseEntity.ok().build();
     }
 

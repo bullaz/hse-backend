@@ -104,11 +104,13 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of("error", "TOTP déjà activé"));
         }
-        if (!totpService.verifyCode(user.getTotpSecret(), req.getCode())) {
+        long step = totpService.verifyCodeStep(user.getTotpSecret(), req.getCode(), user.getTotpLastUsedStep());
+        if (step < 0) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", "Code invalide — vérifiez votre application"));
         }
         user.setTotpEnabled(true);
+        user.setTotpLastUsedStep(step);
         accountService.saveUser(user);
         return ResponseEntity.ok(Map.of("message", "Authentification à deux facteurs activée"));
     }

@@ -2,6 +2,7 @@ package com.stellarix.hse.filter;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.core.Ordered;
@@ -24,23 +25,29 @@ import jakarta.servlet.http.HttpServletResponse;
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class RateLimitFilter extends OncePerRequestFilter {
 
-    private static final String SIGNIN_PATH = "/hse/signin";
+    // Both are brute-forceable secrets (password, TOTP code) — each gets its own
+    // budget per IP so hammering one doesn't consume the other's headroom.
+    private static final Set<String> RATE_LIMITED_PATHS = Set.of(
+            "/hse/signin",
+            "/hse/users/totp/enable"
+    );
     private static final int MAX_ATTEMPTS = 5;
 
     private final LoadingCache<String, Bucket> buckets = Caffeine.newBuilder()
             .expireAfterAccess(1, TimeUnit.HOURS)
-            .build(ip -> Bucket.builder()
+            .build(key -> Bucket.builder()
                     .addLimit(Bandwidth.classic(MAX_ATTEMPTS, Refill.intervally(MAX_ATTEMPTS, Duration.ofMinutes(1))))
                     .build());
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
-        if (!SIGNIN_PATH.equals(request.getRequestURI())) {
+        String path = request.getRequestURI();
+        if (!RATE_LIMITED_PATHS.contains(path)) {
             chain.doFilter(request, response);
             return;
         }
-        Bucket bucket = buckets.get(resolveClientIp(request));
+        Bucket bucket = buckets.get(resolveClientIp(request) + ":" + path);
         if (bucket.tryConsume(1)) {
             chain.doFilter(request, response);
         } else {
@@ -52,10 +59,11 @@ public class RateLimitFilter extends OncePerRequestFilter {
         }
     }
 
+    // There is no trusted reverse proxy in front of this backend today that can be
+    // relied on to strip/overwrite a client-supplied X-Forwarded-For — trusting it
+    // unconditionally would let any client mint a fresh rate-limit bucket per request
+    // just by spoofing the header. Use the actual socket address instead.
     private String resolveClientIp(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        return (forwarded != null && !forwarded.isBlank())
-                ? forwarded.split(",")[0].trim()
-                : request.getRemoteAddr();
+        return request.getRemoteAddr();
     }
 }

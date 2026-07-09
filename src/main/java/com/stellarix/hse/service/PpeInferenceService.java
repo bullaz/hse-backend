@@ -74,7 +74,7 @@ public class PpeInferenceService {
     public record ItemResult(
         String ppeCode, String ppeLabel,
         boolean detected, float confidence,
-        boolean partialWarning, boolean wrongType
+        boolean pairIncomplete, boolean wrongType
     ) {}
 
     public record AnalysisResult(List<ItemResult> items, byte[] annotatedJpeg, boolean personDetected) {}
@@ -278,16 +278,24 @@ public class PpeInferenceService {
             if (matching.isEmpty()) {
                 out.add(new ItemResult(item.code(), item.label(), false, 0f, false, false));
             } else if (needsPair && matching.size() == 1) {
+                // Only one of the pair is visible — can't confirm both hands/feet are
+                // protected, and this is just as likely to be framing/occlusion as a
+                // genuinely missing item. Hard block either way; the retry message tells
+                // the person to get both in frame rather than rejecting them outright.
                 Det d = matching.get(0);
                 float conf = d.refinedScore != null ? d.refinedScore : d.score;
-                out.add(new ItemResult(item.code(), item.label(), true, conf, true, false));
+                out.add(new ItemResult(item.code(), item.label(), false, conf, true, false));
             } else {
                 if (clsIdx == 0 || clsIdx == 5) {
                     List<Det> safeOnes = matching.stream()
                         .filter(d -> Boolean.TRUE.equals(d.isSafetyGear)).toList();
-                    if (safeOnes.isEmpty()) {
-                        float conf = matching.get(0).refinedScore != null
-                            ? matching.get(0).refinedScore : matching.get(0).score;
+                    // Both must be safety-rated — one safety shoe and one regular shoe
+                    // is not compliant, even though "at least one" used to pass this.
+                    boolean allSafe = !safeOnes.isEmpty() && safeOnes.size() == matching.size();
+                    if (!allSafe) {
+                        float conf = matching.stream()
+                            .map(d -> d.refinedScore != null ? d.refinedScore : d.score)
+                            .max(Float::compare).orElse(0f);
                         out.add(new ItemResult(item.code(), item.label(), false, conf, false, true));
                     } else {
                         float conf = safeOnes.stream()

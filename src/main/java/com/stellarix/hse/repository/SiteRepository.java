@@ -12,4 +12,5 @@ public interface SiteRepository extends JpaRepository<Site, Integer> {
     Optional<Site> findByName(String name);
     boolean existsByNameIgnoreCaseAndSiteIdNot(String name, Integer siteId);
     boolean existsByNameIgnoreCase(String name);
+    long countByZoneType_ZoneTypeId(Integer zoneTypeId);
 }

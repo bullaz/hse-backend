@@ -51,6 +51,8 @@ public interface WorkPermitRepository extends JpaRepository<WorkPermit, String> 
 
     long countByTravauxTravauxId(UUID travauxId);
 
+    long countByIntervenants_InductionId(UUID inductionId);
+
     @Query("SELECT DISTINCT w FROM WorkPermit w JOIN w.intervenants i " +
            "WHERE i.inductionId = :inductionId " +
            "AND w.site.siteId = :siteId AND w.status = 'ACTIVE' AND w.endDatetime >= :now " +

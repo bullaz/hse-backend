@@ -46,7 +46,8 @@ public interface PpeVerificationLogRepository extends JpaRepository<PpeVerificat
            "SELECT hi.first_name, hi.last_name, COUNT(l.log_id) AS cnt " +
            "FROM hse_schema.ppe_verification_log l " +
            "JOIN hse_schema.hse_induction hi ON hi.induction_id = l.hse_induction_id " +
-           "WHERE l.captured_at BETWEEN :from AND :to " +
+           "WHERE l.status = 'VALIDATED' " +
+           "AND l.captured_at BETWEEN :from AND :to " +
            "AND (:siteId IS NULL OR l.site_id = :siteId) " +
            "AND (:intent IS NULL OR l.intent = :intent) " +
            "GROUP BY hi.first_name, hi.last_name " +

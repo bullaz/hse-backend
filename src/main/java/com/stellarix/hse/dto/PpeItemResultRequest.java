@@ -10,4 +10,5 @@ public class PpeItemResultRequest {
     private boolean detected;
     private Float confidence;
     private boolean wrongType;
+    private boolean pairIncomplete;
 }

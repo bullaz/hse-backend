@@ -1,7 +1,6 @@
 package com.stellarix.hse.controller;
 
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -16,7 +15,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.stellarix.hse.dto.PageResponse;
-import com.stellarix.hse.dto.WorkPermitRequest;
 import com.stellarix.hse.dto.WorkPermitResponse;
 import com.stellarix.hse.dto.WorkPermitVerifyResponse;
 import com.stellarix.hse.entity.WorkPermit;
@@ -24,7 +22,6 @@ import com.stellarix.hse.service.EmailService;
 import com.stellarix.hse.service.PdfService;
 import com.stellarix.hse.service.WorkPermitService;
 
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -44,12 +41,6 @@ public class WorkPermitController {
         return service.verify(permitId, siteId);
     }
 
-    @PostMapping
-    @PreAuthorize("hasAuthority('HSE')")
-    public ResponseEntity<WorkPermitResponse> create(@Valid @RequestBody WorkPermitRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.create(request));
-    }
-
     @GetMapping
     @PreAuthorize("hasAuthority('HSE')")
     public PageResponse<WorkPermitResponse> getAll(
@@ -66,7 +57,7 @@ public class WorkPermitController {
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('HSE')")
     public WorkPermitResponse getById(@PathVariable String id) {
-        return service.toResponse(service.findById(id), null);
+        return service.toResponse(service.findById(id));
     }
 
     @DeleteMapping("/{id}")

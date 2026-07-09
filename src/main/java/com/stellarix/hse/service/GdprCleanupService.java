@@ -20,7 +20,9 @@ public class GdprCleanupService {
 
     private final RejectedImageRepository repository;
 
-    @Scheduled(cron = "0 0 3 * * *")
+    // Hourly, matching PpeVerificationService.purgeExpiredComposites — a daily cron
+    // let an expired image (48h max) survive up to ~24h past its limit in practice.
+    @Scheduled(fixedRate = 3_600_000)
     @Transactional
     public void purgeExpiredRejectedImages() {
         List<RejectedImage> expired = repository.findByExpiresAtBefore(LocalDateTime.now());

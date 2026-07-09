@@ -92,19 +92,31 @@ public class AuthController {
                     .body(Map.of("error", "Identifiants incorrects"));
         }
 
-        accountService.resetFailedAttempts(user);
-
-        // 5. TOTP check (only for users who have already set it up)
+        // 5. TOTP check (only for users who have already set it up).
+        // Failed attempts are only reset once the login is fully complete — a wrong
+        // TOTP code is just as much a failed login as a wrong password and must count
+        // toward the same lockout, otherwise the password check's lockout is moot for
+        // anyone who already has (or guessed) the password.
         if (user.isTotpEnabled()) {
             if (request.getTotpCode() == null || request.getTotpCode().isBlank()) {
                 return ResponseEntity.status(HttpStatus.ACCEPTED)
                         .body(Map.of("requiresTotp", true));
             }
-            if (!totpService.verifyCode(user.getTotpSecret(), request.getTotpCode())) {
+            long step = totpService.verifyCodeStep(user.getTotpSecret(), request.getTotpCode(), user.getTotpLastUsedStep());
+            if (step < 0) {
+                accountService.recordFailedAttempt(user);
+                if (accountService.isAccountLocked(user)) {
+                    return ResponseEntity.status(HttpStatus.LOCKED)
+                            .body(Map.of("error", "Trop de tentatives. Compte verrouillé 15 minutes."));
+                }
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("error", "Code authentificateur invalide"));
             }
+            user.setTotpLastUsedStep(step);
         }
+
+        accountService.resetFailedAttempts(user);
+        accountService.saveUser(user);
 
         // 6. Issue tokens
         UUID jti = refreshTokenService.issue(user.getEmail());
@@ -148,7 +160,11 @@ public class AuthController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Refresh token revoked");
             }
             String email = jwtService.extractUsername(refreshToken);
-            Hse user = accountService.findByUsernameOrEmail(email);
+            Hse user = accountService.findByUsernameOrEmailOptional(email)
+                    .orElse(null);
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Refresh token invalid");
+            }
 
             if (!user.isActive()) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Account disabled");

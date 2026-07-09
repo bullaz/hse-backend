@@ -18,6 +18,11 @@ public interface PpeRequirementRepository extends JpaRepository<PpeRequirement, 
     // Non-paginated — used by mobile matrix cache lookup (via zone type derived from site)
     List<PpeRequirement> findByZoneType_ZoneTypeId(Integer zoneTypeId);
 
+    long countByZoneType_ZoneTypeId(Integer zoneTypeId);
+
+    // Non-paginated — used to re-verify a submission server-side against the authoritative matrix
+    List<PpeRequirement> findByZoneType_ZoneTypeIdAndIntent(Integer zoneTypeId, String intent);
+
     // Paginated + filtered — used by backoffice table
     Page<PpeRequirement> findByZoneType_ZoneTypeId(Integer zoneTypeId, Pageable pageable);
     Page<PpeRequirement> findByZoneType_ZoneTypeIdAndIntent(Integer zoneTypeId, String intent, Pageable pageable);

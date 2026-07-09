@@ -30,6 +30,7 @@ public class VerificationLogResponse {
     private String permitId;
     private String permitTypeLabel;
     private boolean hasCompositeImage;
+    private boolean deviceTimeSuspicious;
 
     @Data
     @AllArgsConstructor
