@@ -36,7 +36,7 @@ public class DataInitializer {
         }
 
         Hse admin = new Hse();
-        admin.setEmail(adminUsername + "@stellarix.internal");
+        admin.setEmail("no-reply@example.invalid");
         admin.setUsername(adminUsername);
         admin.setNom("Admin");
         admin.setPrenom("IT");
@@ -46,6 +46,6 @@ public class DataInitializer {
         admin.setMustChangePassword(true);
 
         accountService.addUser(admin);
-        log.warn("=== Admin account created: {} — change password on first login ===", adminUsername);
+        log.warn("=== Admin account created: — change password on first login ===");
     }
 }

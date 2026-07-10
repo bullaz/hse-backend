@@ -8,6 +8,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Email;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -26,6 +27,7 @@ public class Hse {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer hseId = 0;
 
+    @Email()
     @Column(nullable = false, unique = true)
     private String email;
 
@@ -56,7 +58,7 @@ public class Hse {
     @Column(name = "totp_enabled", nullable = false)
     private boolean totpEnabled = false;
 
-    // Last accepted TOTP time-step, so the same code can't be replayed within its window.
+    // Last accepted TOTP time-step, so the same code can't be reused within its window.
     @Column(name = "totp_last_used_step")
     private Long totpLastUsedStep;
 
